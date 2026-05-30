@@ -23,7 +23,7 @@ The interface uses a cyber-glass aesthetic: frosted panels, gradient accents, cu
 | **Projects** | Filterable portfolio grid with simulated build terminal |
 | **Experience** | Timeline of roles with technology tags |
 | **Blog** | Article cards with expandable reading view |
-| **Contact** | Email copy-to-clipboard, phone link, location, social links, message form UI |
+| **Contact** | Working contact form → email inbox (Gmail SMTP), copy email, phone link, social links |
 | **UX** | 4 accent themes, 3D tilt cards, mouse-reactive background glow, custom cursor |
 | **3D** | Interactive canvas (torus, crystal, DNA, wave) synced to theme colors |
 
@@ -55,13 +55,35 @@ cd myatkaungkhant-portfolio
 npm install
 ```
 
+### Contact form email setup
+
+Messages from the website are sent to your inbox via Gmail SMTP.
+
+1. Copy the env template:
+   ```bash
+   cp .env.example .env.local
+   ```
+2. Turn on **2-Step Verification** for your Google account.
+3. Create an **App Password**: [Google App Passwords](https://myaccount.google.com/apppasswords) → choose “Mail” → copy the 16-character password.
+4. Edit `.env.local`:
+   ```env
+   SMTP_USER=myatkaungkhant022@gmail.com
+   SMTP_PASS=your_app_password_here
+   CONTACT_TO_EMAIL=myatkaungkhant022@gmail.com
+   ```
+5. Run `npm run dev` (starts the API on port **3001** and the site on **3000**).
+
+When someone submits the contact form, you receive an email with their name, email, subject, and message. **Reply** in Gmail goes directly to the visitor.
+
+> **Live deployment:** The API must run on a host with your SMTP env vars (e.g. Railway, Render, Fly.io). Set `VITE_API_URL` to that API URL when building the frontend. Static-only hosting (GitHub Pages) cannot send email without a separate backend.
+
 ### Development
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) in your browser. The contact API runs at `http://localhost:3001` and is proxied through `/api` in development.
 
 ### Production build
 
@@ -86,13 +108,16 @@ npm run lint
 │   ├── types.ts                # Profile, projects, experience, blog data
 │   ├── main.tsx                # React entry point
 │   ├── index.css               # Global styles & Tailwind
+│   ├── lib/contact.ts          # Contact form API client
 │   └── components/
 │       └── Interactive3DCanvas.tsx
+├── server/
+│   └── index.ts                # Contact form email API (Nodemailer)
 ├── assets/                     # Static assets
 ├── index.html
 ├── vite.config.ts
 ├── package.json
-└── .env.example                # Optional env template (not required for local UI)
+└── .env.example                # SMTP credentials template for contact form
 ```
 
 ---

@@ -28,7 +28,8 @@ export interface Project {
   language: string;
   description: string;
   fullDetails: string;
-  icon: string; // emoji or string
+  icon: string;
+  imageUrl: string;
   liveUrl: string;
   githubUrl: string;
   architecture: string[];
@@ -66,7 +67,7 @@ export const INITIAL_PROFILE: Profile = {
   twitterUrl: "https://twitter.com/",
   email: "myatkaungkhant022@gmail.com",
   yearsExperience: 2,
-  completedProjects: 12,
+  completedProjects: 7,
   happyClients: 8,
 };
 
@@ -99,40 +100,109 @@ export const SKILL_CATEGORIES: SkillCategory[] = [
 
 export const PROJECTS: Project[] = [
   {
-    id: "shop-elevate",
-    title: "Elevate Commerce App",
-    category: "web",
-    language: "Next.js · TypeScript · Prisma · PostgreSQL",
-    description: "A fast-loading, state-managed storefront featuring checkout pipelines, instantaneous layout resizing, and a secure modular vendor dashboard.",
-    fullDetails: "This enterprise-grade application tackles server-side page hydration bottlenecks by caching popular catalogs in global memo-states, resulting under 400ms time-to-first-byte. Database requests are routed dynamically via type-safe Prisma APIs connected to PostgreSQL.",
-    icon: "🛒",
-    liveUrl: "https://shop-elevate.demo",
-    githubUrl: "https://github.com/alexthorne/shop-elevate",
-    architecture: ["Dynamic CSR & SSR Hybrid Pipelines", "State Redux Slice Client Store", "Prisma ORM Index Optimization", "Stripe API Webhook Signatures"],
-  },
-  {
-    id: "orbit-mobile",
-    title: "Orbit Mobile Workspace",
-    category: "mobile",
-    language: "Flutter · Dart · WebSockets",
-    description: "Multi-platform collaborative workplace application designed for offline synchronization, low-latency live canvas syncing, and custom animations.",
-    fullDetails: "A flagship mobile solution leveraging Flutter's Skia rendering engine. Under the hood, custom Dart multi-threading processes direct WebSocket payload updates, allowing fluid peer cursor movements and drawing layouts with zero UI-thread blocking.",
-    icon: "📱",
-    liveUrl: "https://orbit-workspace.app",
-    githubUrl: "https://github.com/alexthorne/orbit-mobile",
-    architecture: ["Double-Buffered Canvas Rendering", "WebSocket Backpressure Queues", "SQLite Local Client Synchronization Override", "Smooth Custom Flare Transformations"],
-  },
-  {
-    id: "pulse-metrics",
-    title: "Pulse Business Intelligence",
+    id: "envault-cli",
+    title: "Envault CLI",
     category: "backend",
-    language: "Node.js · Redis · SQL Server · T-SQL",
-    description: "Real-time query visualizer that simplifies massive T-SQL analytical jobs, updating metrics and rendering charts dynamically in custom responsive grids.",
-    fullDetails: "Pulse ingests data from standard SQL Server transaction tables, executing periodic analytical stored procedures. It implements safe multi-tier caching (Redis, CDN layer, react-query hooks) to maintain high performance and avoid query locks.",
+    language: "TypeScript · Node.js · AES-256 · OS Keychain",
+    description:
+      "Secure secrets manager with a CLI and studio UI—encrypt env vars with AES-256-GCM, sync profiles across dev/staging/prod, and integrate with native OS keychains.",
+    fullDetails:
+      "Envault bundles a TypeScript CLI (CJS/ESM via tsup) with a vault dashboard for managing project secrets, PBKDF2-derived keys, and audited export/import flows protected by macOS Keychain and Linux Secret Service.",
+    icon: "🔐",
+    imageUrl: "/projects/envault-cli.png",
+    liveUrl: "https://envault-cli-668971334330.europe-west2.run.app/",
+    githubUrl: "https://github.com/mkkbun/envault-cli",
+    architecture: ["AES-256-GCM Vault Encryption", "Multi-Profile CLI Targets", "OS Keychain Integration", "PBKDF2 Key Derivation"],
+  },
+  {
+    id: "saas-dashboard",
+    title: "SaaS Management Portal",
+    category: "web",
+    language: "React · TypeScript · Charts · Multi-Tenant",
+    description:
+      "Multi-tenant SaaS admin console tracking MRR, active users, and churn with live telemetry charts and a real-time workspace activity audit stream.",
+    fullDetails:
+      "Production-style management portal with tenant switching, subscription status, historical metric rollups, and pulsing live audit events for billing, projects, and authentication.",
+    icon: "📈",
+    imageUrl: "/projects/saas-dashboard.png",
+    liveUrl: "https://saas-dashboard-668971334330.europe-west2.run.app/",
+    githubUrl: "https://github.com/mkkbun/saas-dashboard",
+    architecture: ["Tenant-Scoped Metrics", "Realtime Activity Feed", "MRR & Churn KPIs", "Responsive Dark UI"],
+  },
+  {
+    id: "forge-ui",
+    title: "Forge UI Design System",
+    category: "web",
+    language: "React · TypeScript · Tailwind · WCAG 2.1",
+    description:
+      "Accessible component library with 20+ primitives, live playground sandbox, global design tokens, and seven polished button variants.",
+    fullDetails:
+      "Forge UI documents polymorphic components with Storybook-style galleries, configurable border-radius tokens, and interactive hooks testing for theme and responsive breakpoints.",
+    icon: "🧩",
+    imageUrl: "/projects/forge-ui.png",
+    liveUrl: "https://forge-ui-component-library-668971334330.europe-west2.run.app/",
+    githubUrl: "https://github.com/mkkbun/forge-ui-component-library",
+    architecture: ["Atomic CSS Variables", "Component Playground", "WCAG 2.1 AA Patterns", "Theme Token Manager"],
+  },
+  {
+    id: "collaboration-workspace",
+    title: "Synapse Collaboration Workspace",
+    category: "web",
+    language: "React · Socket.io · Kanban · Real-Time",
+    description:
+      "Real-time Kanban workspace with drag-and-drop boards, teammate invites, and instant collaboration sync across product roadmap columns.",
+    fullDetails:
+      "Synapse Workspace ships collaborative boards from To Do through Shipped, label-driven work cards, and live status indicators powered by Socket.io room synchronization.",
+    icon: "🔄",
+    imageUrl: "/projects/collaboration-workspace.png",
+    liveUrl: "https://real-time-collaboration-workspace-668971334330.europe-west2.run.app/",
+    githubUrl: "https://github.com/mkkbun/Real-Time-Collaboration-Workspace",
+    architecture: ["Socket.io Room Sync", "Kanban Column Flow", "Label & Assignee Cards", "Invite Teammate Flow"],
+  },
+  {
+    id: "analytics-dashboard",
+    title: "Nexus Telemetry Analytics",
+    category: "web",
+    language: "React · Charts · Event Stream · TypeScript",
+    description:
+      "Unified analytics suite with live pageview feeds, conversion funnels, device breakdowns, and exportable event aggregates over custom date ranges.",
+    fullDetails:
+      "Nexus Telemetry surfaces gross pageviews, unique visitors, bounce rate, and session duration with area charts, donut device splits, and reloadable aggregate pipelines.",
     icon: "📊",
-    liveUrl: "https://pulse-metrics.io",
-    githubUrl: "https://github.com/alexthorne/pulse-metrics",
-    architecture: ["Complex SQL Window Aggregations", "High-frequency Redis Cache Layering", "Adaptive Chart Chunk Rendering Flow", "Express Router Token Authentication"],
+    imageUrl: "/projects/analytics-dashboard.png",
+    liveUrl: "https://analytics-dashboard-668971334330.europe-west2.run.app/",
+    githubUrl: "https://github.com/mkkbun/analytics-dashboard",
+    architecture: ["Live Realtime Feed", "Time-Range Aggregates", "Device Classification Charts", "Event Export Pipeline"],
+  },
+  {
+    id: "ecommerce",
+    title: "Nexus E-Commerce Platform",
+    category: "web",
+    language: "React · Full-Stack · Catalog · Checkout",
+    description:
+      "Premium dark-mode storefront with featured product grids, category navigation, price filters, and a conversion-focused shop-now experience.",
+    fullDetails:
+      "Full-stack commerce UI showcasing hero merchandising, wishlist-ready product cards, collection browsing, and modular catalog components built for scalable inventory.",
+    icon: "🛒",
+    imageUrl: "/projects/ecommerce.png",
+    liveUrl: "https://full-stack-e-commerce-platform-668971334330.europe-west2.run.app/",
+    githubUrl: "https://github.com/mkkbun/Full-Stack-E-Commerce-Platform",
+    architecture: ["Featured Product Grid", "Category Navigation", "Price Filter Controls", "Responsive Merch Hero"],
+  },
+  {
+    id: "job-board-api",
+    title: "Job Board API Workspace",
+    category: "backend",
+    language: "Fastify · Prisma · Redis · BullMQ · JWT",
+    description:
+      "Enterprise backend console with OpenAPI sandbox, Postgres explorer, BullMQ queue monitor, Jest tests, and sliding-window Redis rate limiting.",
+    fullDetails:
+      "Production-grade Fastify TypeScript API featuring modular CRUD, bcrypt auth, RS256 JWT sessions, Prisma on PostgreSQL, background email workers, and an interactive Swagger emulator.",
+    icon: "⚙️",
+    imageUrl: "/projects/job-board-api.png",
+    liveUrl: "https://job-board-api-workspace-668971334330.europe-west2.run.app/",
+    githubUrl: "https://github.com/mkkbun/Job-Board-API-Workspace",
+    architecture: ["Fastify + OpenAPI Sandbox", "Prisma PostgreSQL Layer", "BullMQ Email Workers", "Redis Sliding Rate Limiter"],
   },
 ];
 

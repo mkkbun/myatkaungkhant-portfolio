@@ -11,9 +11,11 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --port=3000 --host=0.0.0.0",
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm run server\" \"vite --port=3000 --host=0.0.0.0\"",
+    "dev:web": "vite --port=3000 --host=0.0.0.0",
+    "server": "tsx server/index.ts",
     "build": "vite build",
-    "preview": "vite preview",
+    "preview": "concurrently -n api,web \"npm run server\" \"vite preview --port=3000\"",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit"
   },
@@ -27,9 +29,14 @@
     "vite": "^6.2.3",
     "express": "^4.21.2",
     "dotenv": "^17.2.3",
-    "motion": "^12.23.24"
+    "motion": "^12.23.24",
+    "nodemailer": "^6.10.1",
+    "cors": "^2.8.5"
   },
   "devDependencies": {
+    "@types/nodemailer": "^6.4.17",
+    "@types/cors": "^2.8.17",
+    "concurrently": "^9.1.2",
     "@types/node": "^22.14.0",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.0",

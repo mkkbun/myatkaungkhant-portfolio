@@ -33,8 +33,11 @@ import {
   X,
   Play,
   RotateCcw,
-  Lock
+  Lock,
+  Sun,
+  Moon
 } from "lucide-react";
+import { useTheme } from "./hooks/useTheme";
 import { 
   INITIAL_PROFILE, 
   SKILL_CATEGORIES, 
@@ -45,6 +48,7 @@ import {
   Project
 } from "./types";
 import Interactive3DCanvas from "./components/Interactive3DCanvas";
+import { sendContactMessage } from "./lib/contact";
 
 // Interactive 3D Card Wrapper using Mouse Coordinates
 interface TiltCardProps {
@@ -216,6 +220,8 @@ const COLOR_PRESETS: ColorPreset[] = [
 ];
 
 export default function App() {
+  const { colorMode, setColorMode, isDark } = useTheme();
+
   // Global States
   const [profile, setProfile] = useState<Profile>(INITIAL_PROFILE);
   const [preset, setPreset] = useState<ColorPreset>(COLOR_PRESETS[0]);
@@ -249,6 +255,7 @@ export default function App() {
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [honeypot, setHoneypot] = useState("");
   const [formState, setFormState] = useState<"idle" | "sending" | "success" | "info">("idle");
   const [formFeedback, setFormFeedback] = useState<string[]>([]);
 
@@ -363,9 +370,9 @@ export default function App() {
     }, 3500);
   };
 
-  const handleFormSubmission = (e: React.FormEvent) => {
+  const handleFormSubmission = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !message) {
+    if (!name.trim() || !email.trim() || !message.trim()) {
       setFormState("info");
       setFormFeedback(["Form requires essential parameters: Name, Mail, Msg.", "Please audit remaining input areas."]);
       return;
@@ -373,32 +380,40 @@ export default function App() {
 
     setFormState("sending");
     setFormFeedback([
-      "Establishing link with telemetry receiver SFO-4...",
-      "Encrypting message payload headers standard-SSL...",
-      "Resolving routing paths..."
+      "Establishing secure link to mail server...",
+      "Encrypting message payload (TLS)...",
+      "Transmitting to inbox..."
     ]);
 
-    let logCounter = 3;
-    const contactLogs = [
-      "Securing token bounds...",
-      "Success! Message packets transmitted.",
-      `✓ Handshake completed. Mail successfully delivered to ${profile.name}!`
-    ];
+    try {
+      await sendContactMessage({
+        name: name.trim(),
+        email: email.trim(),
+        subject: subject.trim(),
+        message: message.trim(),
+        website: honeypot,
+      });
 
-    const timer = setInterval(() => {
-      if (logCounter - 3 < contactLogs.length) {
-        setFormFeedback(prev => [...prev, contactLogs[logCounter - 3]]);
-        logCounter++;
-      } else {
-        clearInterval(timer);
-        setFormState("success");
-        // Clear input values
-        setName("");
-        setEmail("");
-        setSubject("");
-        setMessage("");
-      }
-    }, 9500 / 6); // spread the logs cleanly across a couple seconds
+      setFormFeedback((prev) => [
+        ...prev,
+        "Success! Message delivered to your inbox.",
+        `✓ Delivered to ${profile.email}.`,
+      ]);
+      setFormState("success");
+      setName("");
+      setEmail("");
+      setSubject("");
+      setMessage("");
+      setHoneypot("");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to send message.";
+      setFormState("info");
+      setFormFeedback([
+        "Transmission failed.",
+        errorMessage,
+        `You can email directly: ${profile.email}`,
+      ]);
+    }
   };
 
   // Filter project lists
@@ -425,7 +440,7 @@ export default function App() {
   };
 
   return (
-    <div className="relative min-h-screen font-sans selection:bg-cyan-500/30 selection:text-white overflow-x-hidden text-[#e0e0e0] bg-[#050505]">
+    <div className="relative min-h-screen font-sans selection:bg-cyan-500/30 selection:text-app-heading overflow-x-hidden text-app bg-app transition-colors duration-300">
       
       {/* Dynamic Cursor for Desktop view */}
       {!isMobileDevice && (
@@ -443,7 +458,7 @@ export default function App() {
             }}
           />
           <div 
-            className="fixed pointer-events-none z-[9998] rounded-full border border-white/20 -translate-x-1/2 -translate-y-1/2 transition-all duration-300 select-none"
+            className="fixed pointer-events-none z-[9998] rounded-full border border-app-strong -translate-x-1/2 -translate-y-1/2 transition-all duration-300 select-none"
             style={{
               left: `${mousePos.x}px`,
               top: `${mousePos.y}px`,
@@ -468,11 +483,10 @@ export default function App() {
           }}
         />
         {/* Elegant Dark theme specific blur-glow layers */}
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-900/20 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-5%] right-[-5%] w-[30%] h-[30%] bg-purple-900/20 rounded-full blur-[100px]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] theme-ambient-cyan rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-5%] right-[-5%] w-[30%] h-[30%] theme-ambient-purple rounded-full blur-[100px]" />
         
-        {/* Techno geometric background pattern grids */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.012)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.012)_1px,transparent_1px)] bg-[size:6rem_6rem]" />
+        <div className="absolute inset-0 app-grid" />
       </div>
 
       {/* Profile Live Builder / Dynamic Accent panel */}
@@ -495,26 +509,54 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.9, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 15 }}
-              className="absolute bottom-16 right-0 w-80 glass-panel border border-white/10 rounded-2xl p-5 shadow-2xl z-50 overflow-hidden"
+              className="absolute bottom-16 right-0 w-80 glass-panel border border-app rounded-2xl p-5 shadow-2xl z-50 overflow-hidden"
             >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-400 via-indigo-500 to-emerald-400" />
               
               <div className="flex items-center justify-between mb-4 mt-1">
                 <div className="flex items-center gap-1.5">
                   <Sliders className="w-4 h-4 text-sky-400" />
-                  <h4 className="text-xs font-semibold tracking-wider uppercase font-mono">Control Panel</h4>
+                  <h4 className="text-xs font-semibold tracking-wider uppercase font-mono text-app-heading">Control Panel</h4>
                 </div>
                 <button 
                   onClick={() => setCustomizerOpen(false)}
-                  className="p-1 rounded-md hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                  className="p-1 rounded-md hover:bg-app-surface-hover text-app-muted hover:text-app-heading transition-colors"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
 
+              <div className="mb-4">
+                <label className="text-[10px] font-mono text-app-muted uppercase tracking-wider block mb-2">Appearance</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setColorMode("light")}
+                    className={`h-9 rounded-lg border text-xs font-mono font-bold uppercase transition-all flex items-center justify-center gap-1.5 ${
+                      colorMode === "light"
+                        ? "bg-app-surface-hover border-sky-400 text-app-heading shadow-md shadow-sky-500/10"
+                        : "bg-app-input border-app-soft text-app-muted hover:border-app"
+                    }`}
+                  >
+                    <Sun className="w-3.5 h-3.5" /> Light
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setColorMode("dark")}
+                    className={`h-9 rounded-lg border text-xs font-mono font-bold uppercase transition-all flex items-center justify-center gap-1.5 ${
+                      colorMode === "dark"
+                        ? "bg-app-surface-hover border-sky-400 text-app-heading shadow-md shadow-sky-500/10"
+                        : "bg-app-input border-app-soft text-app-muted hover:border-app"
+                    }`}
+                  >
+                    <Moon className="w-3.5 h-3.5" /> Dark
+                  </button>
+                </div>
+              </div>
+
               {/* Accent Controller */}
               <div className="mb-4">
-                <label className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-2">Accent Aura Color</label>
+                <label className="text-[10px] font-mono text-app-muted uppercase tracking-wider block mb-2">Accent Aura Color</label>
                 <div className="grid grid-cols-4 gap-2">
                   {COLOR_PRESETS.map((p) => (
                     <button
@@ -522,8 +564,8 @@ export default function App() {
                       onClick={() => setPreset(p)}
                       className={`h-9 rounded-lg border text-xs font-mono font-bold capitalize transition-all flex flex-col justify-center items-center ${
                         preset.id === p.id 
-                          ? "bg-white/10 border-sky-400 text-white shadow-md shadow-sky-500/10" 
-                          : "bg-slate-950/40 border-white/5 text-slate-400 hover:border-white/15"
+                          ? "bg-app-surface-hover border-sky-400 text-app-heading shadow-md shadow-sky-500/10" 
+                          : "bg-app-input border-app-soft text-app-muted hover:border-app-strong"
                       }`}
                     >
                       <span className={`w-3 h-3 rounded-full mb-0.5 ${
@@ -535,12 +577,12 @@ export default function App() {
               </div>
 
               {/* Live Profile Editing fields */}
-              <div className="space-y-3 pt-3 border-t border-white/5">
-                <label className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">Modify Profile telemetry</label>
+              <div className="space-y-3 pt-3 border-t border-app-soft">
+                <label className="text-[10px] font-mono text-app-muted uppercase tracking-wider block">Modify Profile telemetry</label>
                 
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="text-[9px] font-mono text-slate-500 uppercase block">Developer Name</label>
+                    <label className="text-[9px] font-mono text-app-subtle uppercase block">Developer Name</label>
                     <span className="text-[8px] font-mono text-amber-500/80 uppercase tracking-wider flex items-center gap-0.5">
                       <Lock className="w-2.5 h-2.5 inline" /> Read Only
                     </span>
@@ -549,13 +591,13 @@ export default function App() {
                     type="text"
                     value={profile.name}
                     disabled
-                    className="w-full bg-slate-950/30 border border-white/5 rounded-lg px-2.5 py-1.5 text-xs text-slate-400 font-mono cursor-not-allowed opacity-60"
+                    className="w-full bg-app-input border border-app-soft rounded-lg px-2.5 py-1.5 text-xs text-app-muted font-mono cursor-not-allowed opacity-60"
                   />
                 </div>
 
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="text-[9px] font-mono text-slate-500 uppercase block">Developer Role</label>
+                    <label className="text-[9px] font-mono text-app-subtle uppercase block">Developer Role</label>
                     <span className="text-[8px] font-mono text-amber-500/80 uppercase tracking-wider flex items-center gap-0.5">
                       <Lock className="w-2.5 h-2.5 inline" /> Read Only
                     </span>
@@ -564,27 +606,27 @@ export default function App() {
                     type="text"
                     value={profile.role}
                     disabled
-                    className="w-full bg-slate-950/30 border border-white/5 rounded-lg px-2.5 py-1.5 text-xs text-slate-400 font-mono cursor-not-allowed opacity-60"
+                    className="w-full bg-app-input border border-app-soft rounded-lg px-2.5 py-1.5 text-xs text-app-muted font-mono cursor-not-allowed opacity-60"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[9px] font-mono text-slate-500 uppercase block mb-1">City Location</label>
+                    <label className="text-[9px] font-mono text-app-subtle uppercase block mb-1">City Location</label>
                     <input
                       type="text"
                       value={profile.location}
                       onChange={(e) => setProfile(prev => ({ ...prev, location: e.target.value }))}
-                      className="w-full bg-slate-950/60 border border-white/10 rounded-lg px-2.5 py-1.5 text-[11px] text-white font-mono focus:outline-none focus:border-sky-500"
+                      className="w-full bg-app-input border border-app rounded-lg px-2.5 py-1.5 text-[11px] text-app-heading font-mono focus:outline-none focus:border-sky-500"
                     />
                   </div>
                   <div>
-                    <label className="text-[9px] font-mono text-slate-500 uppercase block mb-1">Years Exp</label>
+                    <label className="text-[9px] font-mono text-app-subtle uppercase block mb-1">Years Exp</label>
                     <input
                       type="number"
                       value={profile.yearsExperience}
                       onChange={(e) => setProfile(prev => ({ ...prev, yearsExperience: parseInt(e.target.value) || 0 }))}
-                      className="w-full bg-slate-950/60 border border-white/10 rounded-lg px-2.5 py-1.5 text-[11px] text-white font-mono focus:outline-none focus:border-sky-500"
+                      className="w-full bg-app-input border border-app rounded-lg px-2.5 py-1.5 text-[11px] text-app-heading font-mono focus:outline-none focus:border-sky-500"
                     />
                   </div>
                 </div>
@@ -594,7 +636,7 @@ export default function App() {
                     setProfile(INITIAL_PROFILE);
                     setPreset(COLOR_PRESETS[0]);
                   }}
-                  className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-slate-300 hover:text-white font-mono text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5"
+                  className="w-full py-2 bg-app-surface hover:bg-app-surface-hover border border-app rounded-lg text-app-secondary hover:text-app-heading font-mono text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5"
                 >
                   <RotateCcw className="w-3 h-3" /> Reset telemetry
                 </button>
@@ -606,25 +648,25 @@ export default function App() {
 
       {/* Modular Navigation Bar */}
       <nav className="fixed top-0 left-0 right-0 z-40 glass-nav shadow-lg">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 grid grid-cols-[auto_1fr_auto] items-center gap-4">
           <a 
             href="#home"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className="text-2xl font-bold tracking-tighter bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent italic flex items-center gap-2.5"
+            className="text-xl sm:text-2xl font-bold tracking-tighter brand-gradient italic shrink-0 whitespace-nowrap"
           >
             {profile.name.split(' ').map(n => n[0].toUpperCase()).join('') || 'JV'}.STUDIO
           </a>
 
-          {/* Nav Items */}
-          <ul className="hidden md:flex items-center gap-8 text-xs uppercase tracking-[0.2em] font-medium text-white/60">
+          {/* Nav Items — centered column */}
+          <ul className="hidden md:flex items-center justify-center gap-8 text-xs uppercase tracking-[0.2em] font-medium text-app-muted">
             {["skills", "projects", "experience", "blog"].map((sec) => (
               <li key={sec}>
                 <a
                   href={`#${sec}`}
                   onMouseEnter={() => setIsHovered(true)}
                   onMouseLeave={() => setIsHovered(false)}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-app-heading transition-colors"
                 >
                   {sec}
                 </a>
@@ -632,20 +674,30 @@ export default function App() {
             ))}
           </ul>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center justify-end gap-3 sm:gap-4 shrink-0">
+            <button
+              type="button"
+              onClick={() => setColorMode(isDark ? "light" : "dark")}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+              className="w-10 h-10 rounded-full border border-app flex items-center justify-center bg-app-surface backdrop-blur-md hover:bg-app-surface-hover hover:border-app-strong transition-all"
+              title={isDark ? "Switch to light theme" : "Switch to dark theme"}
+              aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+            >
+              {isDark ? (
+                <Sun className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Moon className="w-4 h-4 text-indigo-500" />
+              )}
+            </button>
             <a
               href="#contact"
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
-              className={`px-6 py-2.5 text-xs font-bold uppercase tracking-widest text-[#050505] bg-white ${preset.bgHover} rounded-full transition-all duration-300 shrink-0`}
+              className={`px-4 sm:px-6 py-2.5 text-xs font-bold uppercase tracking-widest nav-contact-pill ${preset.bgHover} rounded-full transition-all duration-300 shrink-0`}
             >
               Contact
             </a>
-            
-            {/* Elegant luxury circular indicator capsule */}
-            <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center bg-white/5 backdrop-blur-md cursor-pointer hover:bg-white/10 hover:border-white/20 transition-all">
-              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-            </div>
           </div>
         </div>
       </nav>
@@ -660,24 +712,24 @@ export default function App() {
           <div className="lg:col-span-7 space-y-8">
             
             {/* Subtitle Badge */}
-            <div className={`inline-block px-3 py-1 bg-white/5 backdrop-blur-md border border-white/10 rounded-full text-[10px] uppercase tracking-widest ${preset.textColor} font-bold mb-2 w-fit`}>
+            <div className={`inline-block px-3 py-1 bg-app-surface backdrop-blur-md border border-app rounded-full text-[10px] uppercase tracking-widest ${preset.textColor} font-bold mb-2 w-fit`}>
               {profile.role || "Digital Architect"}
             </div>
 
             {/* Giant Title headings */}
-            <h1 className="text-6xl sm:text-7xl lg:text-8xl font-light leading-[0.9] tracking-tighter text-white uppercase text-left">
+            <h1 className="text-6xl sm:text-7xl lg:text-8xl font-light leading-[0.9] tracking-tighter text-app-heading uppercase text-left">
               CRAFTING<br />
-              <span className="font-medium italic bg-gradient-to-r from-white via-zinc-400 to-zinc-600 bg-clip-text text-transparent">FUTURE</span><br />
+              <span className="font-medium italic hero-accent-gradient">FUTURE</span><br />
               DYNAMICS.
             </h1>
 
             {/* Interactive console terminal word typing inline */}
-            <div className="text-xl sm:text-2xl text-slate-400 font-mono font-light mt-4">
-              &gt; <span className="text-white font-medium">{typedWord}</span>
+            <div className="text-xl sm:text-2xl text-app-muted font-mono font-light mt-4">
+              &gt; <span className="text-app-heading font-medium">{typedWord}</span>
               <span className="animate-[ping_0.9s_infinite] ml-1">_</span>
             </div>
 
-            <p className="text-slate-400 leading-relaxed max-w-lg text-[14px]">
+            <p className="text-app-muted leading-relaxed max-w-lg text-[14px]">
               {profile.bio}
             </p>
 
@@ -687,7 +739,7 @@ export default function App() {
                 href="#projects"
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                className={`px-8 py-4 bg-white text-black text-xs font-bold uppercase tracking-widest rounded-full ${preset.bgHover} transition-colors duration-300 font-mono flex items-center gap-2 cursor-pointer`}
+                className={`px-8 py-4 nav-contact-pill text-xs font-bold uppercase tracking-widest rounded-full ${preset.bgHover} transition-colors duration-300 font-mono flex items-center gap-2 cursor-pointer`}
               >
                 View Cases <ArrowRight className="w-4 h-4" />
               </a>
@@ -696,34 +748,34 @@ export default function App() {
                 href="#contact"
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                className="px-8 py-4 bg-white/5 border border-white/10 backdrop-blur-md text-white text-xs font-bold uppercase tracking-widest rounded-full hover:bg-white/10 hover:border-white/20 transition-all font-mono"
+                className="px-8 py-4 bg-app-surface border border-app backdrop-blur-md text-app-heading text-xs font-bold uppercase tracking-widest rounded-full hover:bg-app-surface-hover hover:border-app-strong transition-all font-mono"
               >
                 Inquire Telemetry
               </a>
             </div>
 
             {/* Stat Counters with responsive values */}
-            <div className="grid grid-cols-3 gap-6 pt-8 border-t border-white/10">
+            <div className="grid grid-cols-3 gap-6 pt-8 border-t border-app">
               <div>
-                <dt className="text-3xl font-extrabold font-mono text-white flex items-center">
+                <dt className="text-3xl font-extrabold font-mono text-app-heading flex items-center">
                   <span>{profile.yearsExperience}+</span>
                   <Award className={`w-4 h-4 ml-1 ${preset.textColor} opacity-60`} />
                 </dt>
-                <dd className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mt-1">Years Eng.</dd>
+                <dd className="text-[10px] font-mono uppercase tracking-wider text-app-subtle mt-1">Years Eng.</dd>
               </div>
               <div>
-                <dt className="text-3xl font-extrabold font-mono text-white flex items-center">
+                <dt className="text-3xl font-extrabold font-mono text-app-heading flex items-center">
                   <span>{profile.completedProjects}+</span>
                   <Code className="w-4 h-4 ml-1 text-purple-400 opacity-60" />
                 </dt>
-                <dd className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mt-1">Core Modules</dd>
+                <dd className="text-[10px] font-mono uppercase tracking-wider text-app-subtle mt-1">Core Modules</dd>
               </div>
               <div>
-                <dt className="text-3xl font-extrabold font-mono text-white flex items-center">
+                <dt className="text-3xl font-extrabold font-mono text-app-heading flex items-center">
                   <span>{profile.happyClients}+</span>
                   <Globe className="w-4 h-4 ml-1 text-emerald-400 opacity-60" />
                 </dt>
-                <dd className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mt-1">Happy Clients</dd>
+                <dd className="text-[10px] font-mono uppercase tracking-wider text-app-subtle mt-1">Happy Clients</dd>
               </div>
             </div>
 
@@ -735,16 +787,16 @@ export default function App() {
             {/* Double card stack */}
             <div className="w-full max-w-[310px] xs:max-w-[340px] sm:max-w-[390px] md:max-w-[400px] h-[460px] xs:h-[490px] sm:h-[510px] relative">
               {/* Back ambient card */}
-              <div className={`absolute inset-0 bg-gradient-to-tr from-${preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : preset.id === "amber" ? "amber" : "sky"}-500/10 to-purple-500/10 rounded-[30px] sm:rounded-[40px] border border-white/10 backdrop-blur-2xl shadow-2xl rotate-[-4deg] sm:rotate-[-6deg] z-0`} />
+              <div className={`absolute inset-0 bg-gradient-to-tr from-${preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : preset.id === "amber" ? "amber" : "sky"}-500/10 to-purple-500/10 rounded-[30px] sm:rounded-[40px] border border-app backdrop-blur-2xl shadow-2xl rotate-[-4deg] sm:rotate-[-6deg] z-0`} />
               
               {/* Front central card */}
-              <div className="absolute inset-0 bg-white/5 rounded-[30px] sm:rounded-[40px] border border-white/20 backdrop-blur-3xl shadow-2xl flex flex-col p-5 sm:p-8 rotate-2 sm:rotate-3 z-10 overflow-hidden">
-                <div className="w-full h-40 xs:h-44 sm:h-56 bg-[#050505] border border-white/10 rounded-2xl mb-4 sm:mb-6 relative overflow-hidden shrink-0">
-                  <Interactive3DCanvas colorPreset={preset} />
+              <div className="absolute inset-0 bg-app-surface rounded-[30px] sm:rounded-[40px] border border-app-strong backdrop-blur-3xl shadow-2xl flex flex-col p-5 sm:p-8 rotate-2 sm:rotate-3 z-10 overflow-hidden">
+                <div className="w-full h-40 xs:h-44 sm:h-56 bg-app-card border border-app rounded-2xl mb-4 sm:mb-6 relative overflow-hidden shrink-0">
+                  <Interactive3DCanvas colorPreset={preset} colorMode={colorMode} />
                 </div>
 
-                <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight leading-tight">{profile.name}</h3>
-                <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5 sm:mt-1 font-mono uppercase tracking-widest leading-none">{profile.role}</p>
+                <h3 className="text-lg sm:text-xl font-bold text-app-heading tracking-tight leading-tight">{profile.name}</h3>
+                <p className="text-[10px] sm:text-xs text-app-muted mt-0.5 sm:mt-1 font-mono uppercase tracking-widest leading-none">{profile.role}</p>
 
                 {/* Unified Spec tag buttons directly in the 3D layout */}
                 <div className="flex flex-wrap gap-1 mt-3.5 mb-2">
@@ -754,37 +806,37 @@ export default function App() {
                       onClick={() => handleSpotlight(s)}
                       onMouseEnter={() => setIsHovered(true)}
                       onMouseLeave={() => setIsHovered(false)}
-                      className={`text-[9px] font-mono bg-white/5 border border-white/10 px-1.5 py-0.5 rounded-full text-slate-300 hover:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-400/40 hover:text-white cursor-pointer transition-colors`}
+                      className={`text-[9px] font-mono bg-app-surface border border-app px-1.5 py-0.5 rounded-full text-app-secondary hover:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-400/40 hover:text-app-heading cursor-pointer transition-colors`}
                     >
                       {s}
                     </span>
                   ))}
                 </div>
 
-                <div className="mt-auto flex justify-between items-end border-t border-white/5 pt-3">
+                <div className="mt-auto flex justify-between items-end border-t border-app-soft pt-3">
                   <div className="flex -space-x-1.5">
                     {["TS", "REACT", "NODE"].map((tag, i) => (
-                      <div key={tag} className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-[#121212] flex items-center justify-center text-[8px] font-bold font-mono text-white select-none ${
+                      <div key={tag} className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-app-elevated flex items-center justify-center text-[8px] font-bold font-mono text-app-heading select-none ${
                         i === 0 ? (preset.id === "violet" ? "bg-purple-500" : preset.id === "emerald" ? "bg-emerald-500" : preset.id === "amber" ? "bg-amber-500" : "bg-sky-500") : i === 1 ? "bg-indigo-500" : "bg-purple-500"
                       }`}>
                         {tag}
                       </div>
                     ))}
                   </div>
-                  <div className="text-[8px] sm:text-[9px] text-[#888888] uppercase tracking-[0.2em] font-mono">EST_2026</div>
+                  <div className="text-[8px] sm:text-[9px] text-app-subtle uppercase tracking-[0.2em] font-mono">EST_2026</div>
                 </div>
               </div>
 
               {/* Extra floating detail pill on the right - hidden on mobile, visible on tablets/desktops */}
-              <div className="absolute -right-4 sm:-right-8 bottom-12 sm:bottom-16 w-36 sm:w-44 h-24 sm:h-28 bg-white/10 border border-white/20 backdrop-blur-xl rounded-2xl z-20 shadow-xl p-3 sm:p-4 flex flex-col justify-between transform rotate-12 transition-all hover:scale-105 duration-300 hidden sm:flex">
+              <div className="absolute -right-4 sm:-right-8 bottom-12 sm:bottom-16 w-36 sm:w-44 h-24 sm:h-28 bg-app-surface-hover border border-app-strong backdrop-blur-xl rounded-2xl z-20 shadow-xl p-3 sm:p-4 flex flex-col justify-between transform rotate-12 transition-all hover:scale-105 duration-300 hidden sm:flex">
                 <div className="flex justify-between items-center">
                   <div className="w-2 h-2 rounded-full bg-emerald-400 relative">
                     <div className="absolute inset-0 bg-emerald-400 rounded-full animate-ping" />
                   </div>
-                  <div className="text-[8px] text-white/40 uppercase tracking-widest font-mono">CYBER_LINK</div>
+                  <div className="text-[8px] text-app-subtle uppercase tracking-widest font-mono">CYBER_LINK</div>
                 </div>
                 <div className={`text-xs sm:text-sm font-mono ${preset.textColor} tracking-widest font-bold`}>ACTIVE_04</div>
-                <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                <div className="h-1 w-full bg-app-surface-hover rounded-full overflow-hidden">
                   <div className={`h-full w-2/3 ${preset.bgColor}`} />
                 </div>
               </div>
@@ -801,32 +853,32 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-[#02050b]/80 backdrop-blur-md z-50 flex items-center justify-center p-6"
+              className="fixed inset-0 bg-app-overlay backdrop-blur-md z-50 flex items-center justify-center p-6"
             >
               <motion.div
                 initial={{ scale: 0.95, y: 15 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.95, y: 15 }}
-                className="w-full max-w-md glass-panel border border-white/10 rounded-2xl p-6 shadow-2xl relative"
+                className="w-full max-w-md glass-panel border border-app rounded-2xl p-6 shadow-2xl relative"
               >
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-1.5">
                     <Cpu className={`w-5 h-5 ${preset.textColor}`} />
-                    <h3 className="font-mono text-sm uppercase text-slate-200 tracking-wider">Index Telemetry Spotlight</h3>
+                    <h3 className="font-mono text-sm uppercase text-app-secondary tracking-wider">Index Telemetry Spotlight</h3>
                   </div>
                   <button 
                     onClick={() => setSelectedSkill(null)}
-                    className="p-1 rounded-md hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                    className="p-1 rounded-md hover:bg-app-surface-hover text-app-muted hover:text-app-heading transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
 
                 <div className="space-y-4">
-                  <div className="bg-slate-950/60 border border-white/5 rounded-xl p-4 font-mono">
-                    <div className="text-white font-bold text-lg mb-1">{selectedSkill.name}</div>
+                  <div className="bg-app-input border border-app-soft rounded-xl p-4 font-mono">
+                    <div className="text-app-heading font-bold text-lg mb-1">{selectedSkill.name}</div>
                     <div className={`text-[10px] ${preset.textColor} uppercase tracking-widest mb-3`}>Compiled dynamic info: OK</div>
-                    <p className="text-xs text-slate-400 leading-relaxed">
+                    <p className="text-xs text-app-muted leading-relaxed">
                       {selectedSkill.exp}
                     </p>
                   </div>
@@ -837,7 +889,7 @@ export default function App() {
                   
                   <button
                     onClick={() => setSelectedSkill(null)}
-                    className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-mono text-xs text-slate-300 hover:text-white transition-colors"
+                    className="w-full py-2 bg-app-surface hover:bg-app-surface-hover border border-app rounded-xl font-mono text-xs text-app-secondary hover:text-app-heading transition-colors"
                   >
                     Close telemetry scope
                   </button>
@@ -857,10 +909,10 @@ export default function App() {
                 01 // Specialized Tools
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white uppercase font-mono">
+            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-app-heading uppercase font-mono">
               Advanced Skill Modules
             </h2>
-            <p className="text-slate-400 text-xs sm:text-sm font-mono max-w-md">
+            <p className="text-app-muted text-xs sm:text-sm font-mono max-w-md">
               Tap any spec modules below to compile exact diagnostics.
             </p>
           </div>
@@ -871,12 +923,12 @@ export default function App() {
               const IconComp = cat.id === "frontend" ? Layout : cat.id === "backend" ? Server : cat.id === "database" ? Database : Smartphone;
               return (
                 <TiltCard key={cat.id}>
-                  <div className="glass-panel border-white/10 h-full rounded-2xl p-5 group flex flex-col justify-between">
+                  <div className="glass-panel border-app h-full rounded-2xl p-5 group flex flex-col justify-between">
                     <div>
-                      <div className={`w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-4 group-hover:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-400/30 group-hover:bg-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-400/5 transition-all`}>
+                      <div className={`w-10 h-10 rounded-xl bg-app-surface border border-app flex items-center justify-center mb-4 group-hover:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-400/30 group-hover:bg-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-400/5 transition-all`}>
                         <IconComp className={`w-5 h-5 ${preset.textColor}`} />
                       </div>
-                      <h3 className="font-mono text-slate-200 font-bold text-xs uppercase tracking-wider mb-3 leading-tight">
+                      <h3 className="font-mono text-app-secondary font-bold text-xs uppercase tracking-wider mb-3 leading-tight">
                         {cat.title}
                       </h3>
                       <div className="space-y-1.5 mb-6">
@@ -884,16 +936,16 @@ export default function App() {
                           <div 
                             key={s} 
                             onClick={() => handleSpotlight(s)}
-                            className="flex items-center justify-between group/line hover:bg-white/5 px-2 py-1 rounded-md transition-colors"
+                            className="flex items-center justify-between group/line hover:bg-app-surface px-2 py-1 rounded-md transition-colors"
                           >
-                            <span className="text-[11px] font-mono text-slate-400 group-hover/line:text-white transition-colors">{s}</span>
-                            <span className={`text-[8px] font-mono text-slate-600 group-hover/line:${preset.textColor} opacity-0 group-hover/line:opacity-100 transition-all uppercase tracking-wider`}>Inspect</span>
+                            <span className="text-[11px] font-mono text-app-muted group-hover/line:text-app-heading transition-colors">{s}</span>
+                            <span className={`text-[8px] font-mono text-app-subtle group-hover/line:${preset.textColor} opacity-0 group-hover/line:opacity-100 transition-all uppercase tracking-wider`}>Inspect</span>
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    <div className="text-[9px] font-mono text-slate-500 border-t border-white/5 pt-3 uppercase tracking-wider flex items-center justify-between">
+                    <div className="text-[9px] font-mono text-app-subtle border-t border-app-soft pt-3 uppercase tracking-wider flex items-center justify-between">
                       <span>Status</span>
                       <span className="text-emerald-400 font-bold flex items-center gap-1">
                         <Check className="w-3 h-3" /> Online
@@ -917,13 +969,16 @@ export default function App() {
                   02 // Telemetry Works
                 </span>
               </div>
-              <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white uppercase font-mono">
-                Featured Workspaces
+              <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-app-heading uppercase font-mono">
+                Selected Work
               </h2>
+              <p className="text-xs text-app-muted font-mono max-w-md">
+                Seven full-stack builds — live demos, open source, and production-style UIs.
+              </p>
             </div>
 
             {/* Selector Categories */}
-            <div className="flex flex-wrap gap-1.5 p-1 bg-slate-950/60 border border-white/10 rounded-xl self-start">
+            <div className="flex flex-wrap gap-1.5 p-1 bg-app-input border border-app rounded-xl self-start">
               {(["all", "web", "mobile", "backend"] as const).map((tab) => (
                 <button
                   key={tab}
@@ -935,8 +990,8 @@ export default function App() {
                   onMouseLeave={() => setIsHovered(false)}
                   className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider transition-all cursor-pointer ${
                     activeTab === tab 
-                      ? "bg-white/10 text-white shadow-sm" 
-                      : "text-slate-400 hover:text-slate-200"
+                      ? "bg-app-surface-hover text-app-heading shadow-sm" 
+                      : "text-app-muted hover:text-app-secondary"
                   }`}
                 >
                   {tab}
@@ -946,75 +1001,87 @@ export default function App() {
           </div>
 
           {/* Grid layout of Projects */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
             <AnimatePresence mode="popLayout">
-              {filteredProjects.map((p) => (
+              {filteredProjects.map((p, index) => (
                 <motion.div
                   key={p.id}
                   layout
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.3 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.96 }}
+                  transition={{ duration: 0.35, delay: index * 0.05 }}
                   className="h-full"
                 >
-                  <TiltCard className="h-full">
-                    <div className="glass-panel border-white/10 hover:border-white/20 h-full rounded-2xl overflow-hidden shadow-lg flex flex-col justify-between group">
+                  <TiltCard className="h-full project-card">
+                    <article className="glass-panel border-app hover:border-app-strong h-full rounded-2xl overflow-hidden shadow-lg flex flex-col group">
                       
-                      {/* Graphics Header placeholder with dynamic gradient */}
-                      <div className="h-32 bg-slate-950/60 border-b border-white/5 relative flex items-center justify-center overflow-hidden">
-                        <div className={`absolute inset-0 bg-gradient-to-b from-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500/5 to-transparent`} />
-                        <div className={`absolute -bottom-8 w-24 h-24 rounded-full bg-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500/5 filter blur-xl`} />
-                        <span className="text-5xl drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)] group-hover:scale-110 transition-transform duration-300 select-none">
-                          {p.icon}
-                        </span>
-                        
-                        <div className="absolute top-3 right-3">
-                          <span className={`text-[9px] font-mono ${preset.bgSoft10} border ${preset.borderSoft20} ${preset.textColor} px-2 py-0.5 rounded-md uppercase tracking-wider`}>
+                      <div className="project-card-image border-b border-app-soft">
+                        <img
+                          src={p.imageUrl}
+                          alt={`${p.title} preview`}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                        <div className="absolute top-3 left-3 flex items-center gap-2 z-10">
+                          <span className="text-lg drop-shadow-md" aria-hidden="true">{p.icon}</span>
+                          <span className={`text-[9px] font-mono ${preset.bgSoft10} backdrop-blur-md border ${preset.borderSoft20} ${preset.textColor} px-2 py-0.5 rounded-md uppercase tracking-wider`}>
                             {p.category}
+                          </span>
+                        </div>
+                        <div className="absolute top-3 right-3 z-10">
+                          <span className="text-[9px] font-mono bg-app-overlay/80 backdrop-blur-md border border-app text-app-muted px-2 py-0.5 rounded-md uppercase tracking-wider">
+                            0{(index % 7) + 1}
                           </span>
                         </div>
                       </div>
 
-                      {/* Decal Specifications */}
-                      <div className="p-5 flex-1 flex flex-col justify-between">
-                        <div>
-                          <div className={`text-[9px] font-mono ${preset.textColor} font-bold mb-1 uppercase tracking-wider`}>
-                            {p.language}
-                          </div>
-                          <h3 className={`text-sm font-bold text-white uppercase tracking-wider font-mono mb-2 group-hover:${preset.textColor} transition-colors`}>
-                            {p.title}
-                          </h3>
-                          <p className="text-[11px] text-slate-400 leading-relaxed font-mono mb-4">
-                            {p.description}
-                          </p>
+                      <div className="p-5 flex-1 flex flex-col">
+                        <p className={`text-[9px] font-mono ${preset.textColor} font-bold mb-1.5 uppercase tracking-wider leading-relaxed`}>
+                          {p.language}
+                        </p>
+                        <h3 className={`text-base font-bold text-app-heading tracking-tight font-mono mb-2 ${preset.glowText} transition-colors`}>
+                          {p.title}
+                        </h3>
+                        <p className="text-[11px] text-app-muted leading-relaxed font-mono mb-5 flex-1">
+                          {p.description}
+                        </p>
+
+                        <div className="flex gap-2 mb-3">
+                          <a
+                            href={p.liveUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            onMouseEnter={() => setIsHovered(true)}
+                            onMouseLeave={() => setIsHovered(false)}
+                            className="project-link-btn project-link-btn--live"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" /> Live Demo
+                          </a>
+                          <a
+                            href={p.githubUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            onMouseEnter={() => setIsHovered(true)}
+                            onMouseLeave={() => setIsHovered(false)}
+                            className="project-link-btn project-link-btn--github"
+                          >
+                            <Github className="w-3.5 h-3.5" /> GitHub
+                          </a>
                         </div>
 
-                        <div className="space-y-4 border-t border-white/5 pt-4">
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => startTerminalSimulator(p)}
-                              onMouseEnter={() => setIsHovered(true)}
-                              onMouseLeave={() => setIsHovered(false)}
-                              className="px-3 py-1.5 text-[9px] font-mono tracking-wider text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 rounded-md border border-white/10 transition-colors uppercase flex items-center gap-1 cursor-pointer"
-                            >
-                              <Terminal className={`w-3.5 h-3.5 ${preset.textColor}`} /> Live Sandbox
-                            </button>
-                            <a
-                              href={p.githubUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              onMouseEnter={() => setIsHovered(true)}
-                              onMouseLeave={() => setIsHovered(false)}
-                              className="text-[9px] font-mono text-slate-400 hover:text-white flex items-center gap-1 transition-colors uppercase"
-                            >
-                              <Github className="w-3.5 h-3.5" /> Source
-                            </a>
-                          </div>
-                        </div>
-
+                        <button
+                          type="button"
+                          onClick={() => startTerminalSimulator(p)}
+                          onMouseEnter={() => setIsHovered(true)}
+                          onMouseLeave={() => setIsHovered(false)}
+                          className="w-full py-2 text-[9px] font-mono tracking-wider text-app-subtle hover:text-app-heading bg-app-surface hover:bg-app-surface-hover rounded-lg border border-app-soft transition-colors uppercase flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <Terminal className={`w-3.5 h-3.5 ${preset.textColor}`} />
+                          Inspect architecture
+                        </button>
                       </div>
-                    </div>
+                    </article>
                   </TiltCard>
                 </motion.div>
               ))}
@@ -1028,17 +1095,17 @@ export default function App() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 15 }}
-                className="mt-8 border border-white/10 rounded-2xl overflow-hidden glass-panel"
+                className="mt-8 border border-app rounded-2xl overflow-hidden glass-panel"
               >
                 {/* Terminal Header status tags */}
-                <div className="bg-slate-950/80 px-4 py-3 border-b border-white/10 flex items-center justify-between">
+                <div className="bg-app-input px-4 py-3 border-b border-app flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1.5">
                       <span className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
                       <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
                       <span className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
                     </div>
-                    <span className="text-[10px] font-mono text-slate-400 ml-2">
+                    <span className="text-[10px] font-mono text-app-muted ml-2">
                       terminal_telemetry://{terminalProject.id}.sh
                     </span>
                   </div>
@@ -1047,24 +1114,24 @@ export default function App() {
                       if (shellIntervalRef.current) clearInterval(shellIntervalRef.current);
                       setTerminalProject(null);
                     }}
-                    className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                    className="p-1 rounded hover:bg-app-surface-hover text-app-muted hover:text-app-heading transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
 
                 {/* Simulated Screen logs */}
-                <div className="p-4 bg-slate-950/40 font-mono text-xs text-slate-300 min-h-[190px] max-h-[300px] overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-white/10">
+                <div className="p-4 bg-app-input font-mono text-xs text-app-secondary min-h-[190px] max-h-[300px] overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-white/10">
                   {terminalLogs.map((log, idx) => (
                     <div key={idx} className="flex gap-2">
-                      <span className="text-slate-500 select-none">[{idx}]</span>
-                      <span className={log.startsWith("[SUCCESS]") || log.startsWith("✓") ? "text-emerald-400" : log.startsWith("Initialize") ? preset.textColor : "text-slate-300"}>
+                      <span className="text-app-subtle select-none">[{idx}]</span>
+                      <span className={log.startsWith("[SUCCESS]") || log.startsWith("✓") ? "text-emerald-400" : log.startsWith("Initialize") ? preset.textColor : "text-app-secondary"}>
                         {log}
                       </span>
                     </div>
                   ))}
                   {compilingIndex < 9 && (
-                    <div className="flex items-center gap-1 text-slate-500">
+                    <div className="flex items-center gap-1 text-app-subtle">
                       <span>_ compiling telemetry nodes...</span>
                       <span 
                         className="w-2 h-3.5 animate-[ping_0.8s_infinite]" 
@@ -1075,17 +1142,17 @@ export default function App() {
                 </div>
 
                 {/* Tech schema detail visualizer chart */}
-                <div className="bg-slate-950/60 p-4 border-t border-white/5 space-y-3">
-                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest block">System Deployment Schema Map</span>
+                <div className="bg-app-input p-4 border-t border-app-soft space-y-3">
+                  <span className="text-[10px] font-mono text-app-muted uppercase tracking-widest block">System Deployment Schema Map</span>
                   
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-1">
                     {terminalProject.architecture.map((arch, index) => (
-                      <div key={index} className={`bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col justify-between group hover:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500/20 hover:bg-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500/5 transition-colors`}>
+                      <div key={index} className={`bg-app-surface border border-app rounded-xl p-3 flex flex-col justify-between group hover:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500/20 hover:bg-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500/5 transition-colors`}>
                         <div>
                           <div className={`text-[8px] font-mono ${preset.textColor} font-bold uppercase mb-1`}>Node {index + 1}</div>
-                          <div className="text-xs font-mono text-slate-200 line-clamp-2">{arch}</div>
+                          <div className="text-xs font-mono text-app-secondary line-clamp-2">{arch}</div>
                         </div>
-                        <div className="text-[9px] font-mono text-slate-500 text-right mt-2">Telemetry OK</div>
+                        <div className="text-[9px] font-mono text-app-subtle text-right mt-2">Telemetry OK</div>
                       </div>
                     ))}
                   </div>
@@ -1107,17 +1174,17 @@ export default function App() {
                 03 // Career Path
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white uppercase font-mono">
+            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-app-heading uppercase font-mono">
               Professional Timeline
             </h2>
           </div>
 
-          <div className="max-w-3xl ml-4 relative border-l border-white/10 pl-8 space-y-12 py-3">
+          <div className="max-w-3xl ml-4 relative border-l border-app pl-8 space-y-12 py-3">
             {EXPERIENCES.map((exp) => (
               <div key={exp.id} className="relative group">
                 
                 {/* Tracker glowing ring */}
-                <div className={`absolute -left-[37px] top-1.5 w-4.5 h-4.5 rounded-full border border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-400/40 bg-slate-950 flex items-center justify-center transition-all group-hover:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-400 group-hover:scale-110 shadow-md`}>
+                <div className={`absolute -left-[37px] top-1.5 w-4.5 h-4.5 rounded-full border border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-400/40 bg-app-elevated flex items-center justify-center transition-all group-hover:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-400 group-hover:scale-110 shadow-md`}>
                   <div className={`w-1.5 h-1.5 rounded-full ${preset.bgColor} relative`}>
                     <span className={`absolute inset-0 rounded-full ${preset.bgColor} animate-ping group-hover:scale-150 duration-500`} />
                   </div>
@@ -1128,17 +1195,17 @@ export default function App() {
                     {exp.period}
                   </span>
                   
-                  <h3 className="text-base font-extrabold text-white tracking-tight pt-1">
+                  <h3 className="text-base font-extrabold text-app-heading tracking-tight pt-1">
                     {exp.role} 
-                    <span className="font-light text-slate-400 font-mono ml-1.5">&gt; {exp.company}</span>
+                    <span className="font-light text-app-muted font-mono ml-1.5">&gt; {exp.company}</span>
                   </h3>
                   
-                  <div className="flex items-center gap-1 text-[10px] font-mono text-slate-500">
+                  <div className="flex items-center gap-1 text-[10px] font-mono text-app-subtle">
                     <MapPin className="w-3.5 h-3.5" />
                     <span>{exp.location}</span>
                   </div>
 
-                  <p className="text-slate-400 text-xs sm:text-sm font-mono max-w-2xl leading-relaxed pt-2">
+                  <p className="text-app-muted text-xs sm:text-sm font-mono max-w-2xl leading-relaxed pt-2">
                     {exp.description}
                   </p>
 
@@ -1146,7 +1213,7 @@ export default function App() {
                     {exp.tags.map((t) => (
                       <span
                         key={t}
-                        className="text-[9px] font-mono bg-white/5 border border-white/10 text-slate-400 px-2.5 py-0.5 rounded-md"
+                        className="text-[9px] font-mono bg-app-surface border border-app text-app-muted px-2.5 py-0.5 rounded-md"
                       >
                         {t}
                       </span>
@@ -1169,7 +1236,7 @@ export default function App() {
                 04 // Written Notes
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white uppercase font-mono">
+            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-app-heading uppercase font-mono">
               Insights & Diagnostics
             </h2>
           </div>
@@ -1177,25 +1244,25 @@ export default function App() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {BLOG_POSTS.map((post) => (
               <TiltCard key={post.id} className="h-full">
-                <div className={`glass-panel border-white/10 hover:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500/20 h-full rounded-2xl p-5 flex flex-col justify-between group`}>
+                <div className={`glass-panel border-app hover:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500/20 h-full rounded-2xl p-5 flex flex-col justify-between group`}>
                   
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between text-[9px] font-mono text-slate-500">
+                    <div className="flex items-center justify-between text-[9px] font-mono text-app-subtle">
                       <span className={`${preset.textColor} ${preset.bgSoft} px-2 py-0.5 border ${preset.borderSoft} rounded-md uppercase tracking-wider`}>{post.category}</span>
                       <span>{post.readTime}</span>
                     </div>
 
-                    <h3 className={`text-xs sm:text-sm font-extrabold text-white uppercase tracking-tight group-hover:${preset.textColor} transition-colors leading-snug font-mono`}>
+                    <h3 className={`text-xs sm:text-sm font-extrabold text-app-heading uppercase tracking-tight group-hover:${preset.textColor} transition-colors leading-snug font-mono`}>
                       {post.title}
                     </h3>
 
-                    <p className="text-[11px] text-slate-400 line-clamp-3 leading-relaxed font-mono">
+                    <p className="text-[11px] text-app-muted line-clamp-3 leading-relaxed font-mono">
                       {post.summary}
                     </p>
                   </div>
 
-                  <div className="border-t border-white/5 pt-4 mt-6 flex items-center justify-between">
-                    <span className="text-[9px] font-mono text-slate-500">{post.date}</span>
+                  <div className="border-t border-app-soft pt-4 mt-6 flex items-center justify-between">
+                    <span className="text-[9px] font-mono text-app-subtle">{post.date}</span>
                     
                     <button
                       onClick={() => {
@@ -1204,7 +1271,7 @@ export default function App() {
                       }}
                       onMouseEnter={() => setIsHovered(true)}
                       onMouseLeave={() => setIsHovered(false)}
-                      className={`text-[10px] font-mono font-bold ${preset.textColor} hover:text-white transition-colors flex items-center gap-1 uppercase cursor-pointer`}
+                      className={`text-[10px] font-mono font-bold ${preset.textColor} hover:text-app-heading transition-colors flex items-center gap-1 uppercase cursor-pointer`}
                     >
                       Inspect Module_ <BookOpen className="w-3.5 h-3.5" />
                     </button>
@@ -1217,7 +1284,7 @@ export default function App() {
         </section>
 
         {/* SECURE SUBMISSION CONTACT GATE */}
-        <section id="contact" className="grid grid-cols-1 lg:grid-cols-12 gap-12 bg-slate-950/40 rounded-3xl border border-white/10 p-6 sm:p-10 relative overflow-hidden backdrop-blur-md">
+        <section id="contact" className="grid grid-cols-1 lg:grid-cols-12 gap-12 bg-app-input rounded-3xl border border-app p-6 sm:p-10 relative overflow-hidden backdrop-blur-md">
           {/* Graphic reflection light */}
           <div className={`absolute top-0 right-0 w-80 h-80 ${preset.bgSoft} rounded-full blur-[100px] pointer-events-none`} />
 
@@ -1225,29 +1292,29 @@ export default function App() {
           <div className="lg:col-span-5 space-y-6">
             <div className="space-y-2">
               <span className={`text-[10px] font-mono font-black ${preset.textColor} uppercase tracking-widest block`}>05 // Secure Pipeline</span>
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase leading-snug">
+              <h2 className="text-2xl sm:text-3xl font-black text-app-heading tracking-tight uppercase leading-snug">
                 Deploy A Message
               </h2>
-              <p className="text-slate-400 text-xs sm:text-sm leading-relaxed font-mono">
+              <p className="text-app-muted text-xs sm:text-sm leading-relaxed font-mono">
                 Initiate a custom message telemetry envelope. Secure key encryption will apply automatically.
               </p>
             </div>
 
-            <div className="space-y-4 pt-4 border-t border-white/10">
+            <div className="space-y-4 pt-4 border-t border-app">
               {/* Telemetry copyable email row */}
               <div 
                 onClick={handleCopyEmail}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                className="flex items-center gap-3.5 group/row cursor-pointer hover:bg-white/5 p-2 rounded-xl transition-colors"
+                className="flex items-center gap-3.5 group/row cursor-pointer hover:bg-app-surface p-2 rounded-xl transition-colors"
               >
-                <div className={`w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover/row:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-400/40 group-hover/row:bg-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-400/5 transition-all`}>
+                <div className={`w-10 h-10 rounded-xl bg-app-surface border border-app flex items-center justify-center group-hover/row:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-400/40 group-hover/row:bg-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-400/5 transition-all`}>
                   <Mail className={`w-4.5 h-4.5 ${preset.textColor}`} />
                 </div>
                 <div>
-                  <span className="text-[9px] font-mono text-slate-500 block uppercase tracking-wider">E-mail Pipeline</span>
-                  <span className="text-xs font-mono text-slate-300 group-hover/row:text-white transition-colors flex items-center gap-1.5">
-                    {profile.email} <Copy className={`w-3 h-3 text-slate-500 group-hover/row:${preset.textColor}`} />
+                  <span className="text-[9px] font-mono text-app-subtle block uppercase tracking-wider">E-mail Pipeline</span>
+                  <span className="text-xs font-mono text-app-secondary group-hover/row:text-app-heading transition-colors flex items-center gap-1.5">
+                    {profile.email} <Copy className={`w-3 h-3 text-app-subtle group-hover/row:${preset.textColor}`} />
                   </span>
                 </div>
               </div>
@@ -1256,26 +1323,26 @@ export default function App() {
                 href={`tel:${profile.phone.replace(/\s/g, "")}`}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                className="flex items-center gap-3.5 group/row p-2 rounded-xl transition-colors hover:bg-white/5"
+                className="flex items-center gap-3.5 group/row p-2 rounded-xl transition-colors hover:bg-app-surface"
               >
-                <div className={`w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover/row:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-400/40 transition-all`}>
+                <div className={`w-10 h-10 rounded-xl bg-app-surface border border-app flex items-center justify-center group-hover/row:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-400/40 transition-all`}>
                   <Phone className={`w-4.5 h-4.5 ${preset.textColor}`} />
                 </div>
                 <div>
-                  <span className="text-[9px] font-mono text-slate-500 block uppercase tracking-wider">Voice Link</span>
-                  <span className="text-xs font-mono text-slate-300 group-hover/row:text-white transition-colors">
+                  <span className="text-[9px] font-mono text-app-subtle block uppercase tracking-wider">Voice Link</span>
+                  <span className="text-xs font-mono text-app-secondary group-hover/row:text-app-heading transition-colors">
                     {profile.phone}
                   </span>
                 </div>
               </a>
 
               <div className="flex items-center gap-3.5 p-2">
-                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/15 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-app-surface border border-app-strong flex items-center justify-center">
                   <MapPin className={`w-4.5 h-4.5 ${preset.textColor}`} />
                 </div>
                 <div>
-                  <span className="text-[9px] font-mono text-slate-500 block uppercase tracking-wider">Operational Port</span>
-                  <span className="text-xs font-mono text-slate-300">
+                  <span className="text-[9px] font-mono text-app-subtle block uppercase tracking-wider">Operational Port</span>
+                  <span className="text-xs font-mono text-app-secondary">
                     {profile.location}
                   </span>
                 </div>
@@ -1289,7 +1356,7 @@ export default function App() {
                 rel="noreferrer"
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-slate-400 hover:text-white transition-colors"
+                className="p-2 bg-app-surface hover:bg-app-surface-hover border border-app rounded-xl text-app-muted hover:text-app-heading transition-colors"
                 title="GitHub Core"
               >
                 <Github className="w-5 h-5" />
@@ -1300,7 +1367,7 @@ export default function App() {
                 rel="noreferrer"
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-slate-400 hover:text-white transition-colors"
+                className="p-2 bg-app-surface hover:bg-app-surface-hover border border-app rounded-xl text-app-muted hover:text-app-heading transition-colors"
                 title="LinkedIn Node"
               >
                 <Linkedin className="w-5 h-5" />
@@ -1311,7 +1378,7 @@ export default function App() {
                 rel="noreferrer"
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-slate-400 hover:text-white transition-colors"
+                className="p-2 bg-app-surface hover:bg-app-surface-hover border border-app rounded-xl text-app-muted hover:text-app-heading transition-colors"
                 title="Twitter Link"
               >
                 <Twitter className="w-5 h-5" />
@@ -1322,47 +1389,57 @@ export default function App() {
           {/* Right Panel form client */}
           <div className="lg:col-span-7">
             <form onSubmit={handleFormSubmission} className="space-y-4">
-              
+              <input
+                type="text"
+                name="website"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+                className="absolute opacity-0 pointer-events-none h-0 w-0"
+                aria-hidden="true"
+              />
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">Client Name</label>
+                  <label className="text-[10px] font-mono text-app-muted uppercase tracking-wider block">Client Name</label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
                     placeholder="Jane Smith"
-                    className={`w-full bg-slate-950/40 border border-white/10 focus:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500 transition-all font-mono`}
+                    className={`w-full bg-app-input border border-app focus:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500 rounded-xl px-4 py-3 text-xs text-app-heading placeholder:text-app-subtle focus:outline-none focus:ring-1 focus:ring-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500 transition-all font-mono`}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">Sender Email</label>
+                  <label className="text-[10px] font-mono text-app-muted uppercase tracking-wider block">Sender Email</label>
                   <input
                     type="email"
                     value={email}
                     required
                     placeholder="jane@company.com"
                     onChange={(e) => setEmail(e.target.value)}
-                    className={`w-full bg-slate-950/40 border border-white/10 focus:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500 transition-all font-mono`}
+                    className={`w-full bg-app-input border border-app focus:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500 rounded-xl px-4 py-3 text-xs text-app-heading placeholder:text-app-subtle focus:outline-none focus:ring-1 focus:ring-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500 transition-all font-mono`}
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">Project Subject</label>
+                <label className="text-[10px] font-mono text-app-muted uppercase tracking-wider block">Project Subject</label>
                 <input
                   type="text"
                   value={subject}
                   placeholder="Full-Stack Proposal"
                   onChange={(e) => setSubject(e.target.value)}
-                  className={`w-full bg-slate-950/40 border border-white/10 focus:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500 transition-all font-mono`}
+                  className={`w-full bg-app-input border border-app focus:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500 rounded-xl px-4 py-3 text-xs text-app-heading placeholder:text-app-subtle focus:outline-none focus:ring-1 focus:ring-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500 transition-all font-mono`}
                 />
               </div>
 
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">Message Telemetry Payload</label>
-                  <span className={`text-[9px] font-mono ${message.length > 500 ? "text-red-400" : "text-slate-500"}`}>
+                  <label className="text-[10px] font-mono text-app-muted uppercase tracking-wider block">Message Telemetry Payload</label>
+                  <span className={`text-[9px] font-mono ${message.length > 500 ? "text-red-400" : "text-app-subtle"}`}>
                     {message.length} / 600 characters max
                   </span>
                 </div>
@@ -1373,7 +1450,7 @@ export default function App() {
                   required
                   placeholder="Describe the details of your proposal scope..."
                   onChange={(e) => setMessage(e.target.value)}
-                  className={`w-full bg-slate-950/40 border border-white/10 focus:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500 transition-all font-mono resize-none`}
+                  className={`w-full bg-app-input border border-app focus:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500 rounded-xl px-4 py-3 text-xs text-app-heading placeholder:text-app-subtle focus:outline-none focus:ring-1 focus:ring-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500 transition-all font-mono resize-none`}
                 />
               </div>
 
@@ -1391,22 +1468,22 @@ export default function App() {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="bg-slate-950/60 border border-white/10 rounded-xl p-4 font-mono space-y-1"
+                    className="bg-app-input border border-app rounded-xl p-4 font-mono space-y-1"
                   >
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 border-b border-white/5 pb-2 mb-2">
+                    <div className="flex items-center justify-between text-[10px] text-app-muted border-b border-app-soft pb-2 mb-2">
                       <span className="flex items-center gap-1">
                         <Terminal className={`w-3.5 h-3.5 ${preset.textColor}`} /> secure_uplink_stream
                       </span>
                       <button 
                         type="button"
                         onClick={() => setFormState("idle")}
-                        className="text-[9px] text-slate-500 hover:text-white uppercase"
+                        className="text-[9px] text-app-subtle hover:text-app-heading uppercase"
                       >
                         [clear logs]
                       </button>
                     </div>
                     {formFeedback.map((fb, idx) => (
-                      <div key={idx} className="text-[11px] text-slate-300">
+                      <div key={idx} className="text-[11px] text-app-secondary">
                         &gt; {fb}
                       </div>
                     ))}
@@ -1438,24 +1515,24 @@ export default function App() {
       </main>
 
       {/* Terminal Grid Footer overlay */}
-      <footer className="border-t border-white/5 bg-transparent relative z-10">
+      <footer className="border-t border-app-soft bg-transparent relative z-10">
         <div className="max-w-7xl mx-auto px-12 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
-          <p className="text-[10px] text-white/40 uppercase tracking-[0.2em] font-medium font-sans">
+          <p className="text-[10px] text-app-subtle uppercase tracking-[0.2em] font-medium font-sans">
             © 2026 {profile.name.toUpperCase()} STUDIO. ALL RIGHTS RESERVED.
           </p>
           
-          <div className="flex items-center gap-8 text-[10px] text-white/40 uppercase tracking-[0.2em] font-medium font-sans">
+          <div className="flex items-center gap-8 text-[10px] text-app-subtle uppercase tracking-[0.2em] font-medium font-sans">
             <span>MODULES x{profile.completedProjects}</span>
-            <div className="w-1.5 h-1.5 bg-white/20 rounded-full" />
+            <div className="w-1.5 h-1.5 bg-app-border rounded-full" />
             <span>COMMITS x1.2k</span>
           </div>
 
-          <div className="flex items-center gap-6 text-[10px] font-mono tracking-wider text-slate-500 uppercase">
-            <a href="#skills" className="hover:text-white transition-colors">SPEC GRID</a>
-            <div className="w-1 h-1 bg-white/20 rounded-full" />
-            <a href="#projects" className="hover:text-white transition-colors">WORKSPACE</a>
-            <div className="w-1 h-1 bg-white/20 rounded-full" />
-            <a href="#contact" className="hover:text-white transition-colors">SATELLITE</a>
+          <div className="flex items-center gap-6 text-[10px] font-mono tracking-wider text-app-subtle uppercase">
+            <a href="#skills" className="hover:text-app-heading transition-colors">SPEC GRID</a>
+            <div className="w-1 h-1 bg-app-border rounded-full" />
+            <a href="#projects" className="hover:text-app-heading transition-colors">WORKSPACE</a>
+            <div className="w-1 h-1 bg-app-border rounded-full" />
+            <a href="#contact" className="hover:text-app-heading transition-colors">SATELLITE</a>
           </div>
         </div>
       </footer>

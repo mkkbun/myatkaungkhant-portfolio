@@ -29,9 +29,10 @@ interface Interactive3DCanvasProps {
     glowColor: string;
     textGrad: string;
   };
+  colorMode?: "dark" | "light";
 }
 
-export default function Interactive3DCanvas({ colorPreset }: Interactive3DCanvasProps) {
+export default function Interactive3DCanvas({ colorPreset, colorMode = "dark" }: Interactive3DCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -293,7 +294,8 @@ export default function Interactive3DCanvas({ colorPreset }: Interactive3DCanvas
 
     const render = () => {
       // Clear with elegant translucent black to create premium fade trails
-      ctx.fillStyle = "rgba(5, 5, 5, 0.45)";
+      ctx.fillStyle =
+        colorMode === "light" ? "rgba(255, 255, 255, 0.55)" : "rgba(5, 5, 5, 0.45)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       const cx = canvas.width / 2;
@@ -479,7 +481,7 @@ export default function Interactive3DCanvas({ colorPreset }: Interactive3DCanvas
     return () => {
       cancelAnimationFrame(animFrame);
     };
-  }, [shape, resolution, modelScale, nodeSize, showWireframe, showNodes, crystalPoints, torusPoints, dnaPoints, wavePoints, activeColor, isRotating]);
+  }, [shape, resolution, modelScale, nodeSize, showWireframe, showNodes, crystalPoints, torusPoints, dnaPoints, wavePoints, activeColor, isRotating, colorMode]);
 
   // Handle Resize of Container properly
   useEffect(() => {
@@ -525,15 +527,15 @@ export default function Interactive3DCanvas({ colorPreset }: Interactive3DCanvas
 
       {/* Shapes Selector floating bottom glass overlay */}
       <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between pointer-events-none">
-        <div className="flex gap-1 bg-slate-950/80 border border-white/10 backdrop-blur-md px-1.5 py-1 rounded-xl pointer-events-auto">
+        <div className="flex gap-1 bg-app-input border border-app backdrop-blur-md px-1.5 py-1 rounded-xl pointer-events-auto">
           {(["torus", "crystal", "dna", "wave"] as const).map((s) => (
             <button
               key={s}
               onClick={() => setShape(s)}
               className={`px-2 py-1 text-[9px] font-mono font-bold uppercase rounded-lg transition-colors cursor-pointer ${
                 shape === s 
-                  ? "bg-white/10 text-white font-black" 
-                  : "text-slate-500 hover:text-slate-300"
+                  ? "bg-app-surface-hover text-app-heading font-black" 
+                  : "text-app-subtle hover:text-app-secondary"
               }`}
             >
               {s === "torus" ? "Torus" : s === "crystal" ? "Crystal" : s === "dna" ? "Helix" : "Wave"}
@@ -542,10 +544,10 @@ export default function Interactive3DCanvas({ colorPreset }: Interactive3DCanvas
         </div>
 
         {/* Speed State controls */}
-        <div className="flex bg-slate-950/80 border border-white/10 backdrop-blur-md p-1 rounded-xl pointer-events-auto gap-1">
+        <div className="flex bg-app-input border border-app backdrop-blur-md p-1 rounded-xl pointer-events-auto gap-1">
           <button
             onClick={() => setIsRotating(!isRotating)}
-            className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+            className="p-1 rounded text-app-muted hover:text-app-heading hover:bg-app-surface transition-colors cursor-pointer"
             title={isRotating ? "Pause Rotating Space" : "Play Rotating Space"}
           >
             {isRotating ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 text-sky-400" />}
@@ -554,7 +556,7 @@ export default function Interactive3DCanvas({ colorPreset }: Interactive3DCanvas
             onClick={() => {
               anglesRef.current = { x: 0.5, y: 0.8, z: 0.2 };
             }}
-            className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+            className="p-1 rounded text-app-muted hover:text-app-heading hover:bg-app-surface transition-colors cursor-pointer"
             title="Reset Coordinates"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -563,26 +565,26 @@ export default function Interactive3DCanvas({ colorPreset }: Interactive3DCanvas
       </div>
 
       {/* Settings control sliders overlay at bottom of the panel */}
-      <div className="mt-auto p-3 z-10 bg-slate-950/65 border-t border-white/10 backdrop-blur-md pointer-events-auto flex items-center justify-between text-[9px] font-mono text-slate-400">
+      <div className="mt-auto p-3 z-10 bg-app-input border-t border-app backdrop-blur-md pointer-events-auto flex items-center justify-between text-[9px] font-mono text-app-muted">
         
         {/* Toggle options checkboxes */}
         <div className="flex gap-3">
-          <label className="flex items-center gap-1 cursor-pointer hover:text-slate-200">
+          <label className="flex items-center gap-1 cursor-pointer hover:text-app-secondary">
             <input
               type="checkbox"
               checked={showWireframe}
               onChange={(e) => setShowWireframe(e.target.checked)}
-              className="accent-sky-500 w-3 h-3 bg-slate-900 border-white/10 rounded"
+              className="accent-sky-500 w-3 h-3 bg-app-elevated border border-app rounded"
             />
             <span>Grid</span>
           </label>
 
-          <label className="flex items-center gap-1 cursor-pointer hover:text-slate-200">
+          <label className="flex items-center gap-1 cursor-pointer hover:text-app-secondary">
             <input
               type="checkbox"
               checked={showNodes}
               onChange={(e) => setShowNodes(e.target.checked)}
-              className="accent-sky-500 w-3 h-3 bg-slate-900 border-white/10 rounded"
+              className="accent-sky-500 w-3 h-3 bg-app-elevated border border-app rounded"
             />
             <span>Nodes</span>
           </label>
@@ -591,7 +593,7 @@ export default function Interactive3DCanvas({ colorPreset }: Interactive3DCanvas
         {/* Interactive Resizing control helper status */}
         <div className="flex items-center gap-1.5">
           <Sliders className="w-3.5 h-3.5 text-sky-400" />
-          <span className="text-slate-300">Drag viewport to manually orbit</span>
+          <span className="text-app-secondary">Drag viewport to manually orbit</span>
         </div>
 
       </div>
