@@ -157,6 +157,22 @@ export function answerPortfolioQuestion(raw: string): string {
     return proj ? `${proj.title}: ${proj.description}\nLive: ${proj.liveUrl}` : "See Envault CLI in projects.";
   }
 
+  if (
+    includesAny(q, [
+      "patient assistant",
+      "ai chatbot",
+      "healthcare",
+      "gemini",
+      "clinic",
+      "dental assistant",
+    ])
+  ) {
+    const proj = PROJECTS.find((x) => x.id === "ai-patient-assistant");
+    return proj
+      ? `${proj.title}: ${proj.description}\nLive: ${proj.liveUrl}\nGitHub: ${proj.githubUrl}`
+      : "See UK AI Patient Assistant in his projects.";
+  }
+
   if (includesAny(q, ["years", "experience year", "how long"])) {
     return `About ${p.yearsExperience}+ years of engineering experience (as shown on his portfolio).`;
   }

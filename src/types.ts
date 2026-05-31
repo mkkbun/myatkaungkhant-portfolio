@@ -100,7 +100,7 @@ export const INITIAL_PROFILE: Profile = {
   twitterUrl: "https://twitter.com/",
   email: "myatkaungkhant022@gmail.com",
   yearsExperience: 2,
-  completedProjects: 8,
+  completedProjects: 9,
   happyClients: 8,
 };
 
@@ -132,6 +132,26 @@ export const SKILL_CATEGORIES: SkillCategory[] = [
 ];
 
 export const PROJECTS: Project[] = [
+  {
+    id: "ai-patient-assistant",
+    title: "UK AI Patient Assistant",
+    category: "web",
+    language: "React · Express · Gemini · Multi-Tenant Healthcare",
+    description:
+      "Engineered a full-stack AI patient assistant for UK clinics—dental, GP, and private—using React, Express, and Gemini. The platform delivers compliant receptionist chat with safety guardrails, voice support, multi-tenant configuration, and real-time intent telemetry for safe, scalable healthcare automation.",
+    fullDetails:
+      "Agency-grade SaaS for UK healthcare: embeddable patient web widgets, tenant-specific clinic profiles, service catalogues, and a live AI inspection console with intent telemetry (booking leads, medical warnings, CRM escalation). Powered by Gemini with UK compliance guardrails, GDPR-aware flows, and voice-enabled concierge chat.",
+    icon: "🏥",
+    imageUrl: "/projects/ai-patient-assistant.png",
+    liveUrl: "https://ai-chatbot-patient-assistant.onrender.com/",
+    githubUrl: "https://github.com/mkkbun/AI-Chatbot-Patient-Assistant",
+    architecture: [
+      "Multi-Tenant Clinic Profiles",
+      "Gemini AI Receptionist Chat",
+      "UK Compliance & Safety Guardrails",
+      "Real-Time Intent Telemetry",
+    ],
+  },
   {
     id: "edutrack",
     title: "EduTrack",

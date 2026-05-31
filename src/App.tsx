@@ -994,7 +994,7 @@ export default function App() {
                 Selected Work
               </h2>
               <p className="text-xs text-app-muted font-mono max-w-md">
-                Eight full-stack builds — live demos, open source, and production-style UIs.
+                {PROJECTS.length} full-stack builds — live demos, open source, and production-style UIs.
               </p>
             </div>
 
