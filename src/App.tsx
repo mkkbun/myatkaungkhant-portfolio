@@ -7,7 +7,6 @@ import {
   Layout, 
   Server, 
   Database, 
-  Smartphone, 
   Sparkles, 
   Github, 
   Linkedin, 
@@ -48,6 +47,7 @@ import {
   Profile,
   Project,
   BlogPost,
+  projectsUsingSkill,
 } from "./types";
 import Interactive3DCanvas from "./components/Interactive3DCanvas";
 import GlassScrollRail from "./components/GlassScrollRail";
@@ -101,7 +101,7 @@ function TiltCard({ children, className = "", onClick }: TiltCardProps) {
       onClick={onClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={`relative cursor-pointer transition-all duration-200 ${className}`}
+      className={`relative cursor-pointer transition-all duration-200 flex flex-col ${className}`}
       style={{
         transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${scale})`,
         transformStyle: "preserve-3d",
@@ -120,7 +120,10 @@ function TiltCard({ children, className = "", onClick }: TiltCardProps) {
       {/* Secondary glow behind card */}
       <div className="absolute inset-0 -z-10 rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl bg-sky-500/5" />
       
-      <div style={{ transform: "translateZ(10px)" }}>
+      <div
+        className="h-full w-full flex flex-col flex-1 min-h-0"
+        style={{ transform: "translateZ(10px)" }}
+      >
         {children}
       </div>
     </div>
@@ -441,21 +444,37 @@ export default function App() {
     return PROJECTS.filter(p => p.category === activeTab);
   }, [activeTab]);
 
-  // Skill Spotlight Handler
   const handleSpotlight = (tag: string) => {
+    const usedIn = projectsUsingSkill(tag);
     const proficiencies: Record<string, string> = {
-      React: "Master Level (5+ Years). Advanced rendering optimizations, hook state machines, server component caching.",
-      "Next.js": "Expert Level (4 Years). Dynamic middleware routes, lazy bundle segments, nested parallel layouts.",
-      TypeScript: "Deep Native (5 Years). Direct strict narrowing, discrimination matrix, generic functional structures.",
-      "Tailwind CSS": "Expert (6 Years). Native responsive custom classes, clean atomic component overlays.",
-      Flutter: "Expert (3+ Years). Single codebase UI rendering, state bindings, Dart performance profiling.",
-      Dart: "Proficient. Micro-task scheduling, non-blocking asynchronous loops, sound empty-safety types.",
-      PostgreSQL: "Advanced. Stored procedures, dynamic schema optimizations, indexing configurations.",
-      Express: "Master. High throughput API gateways, JSON Web Token filters, middleware hooks.",
-      "Prisma ORM": "Expert. Complex window selections, relationship queries, auto-migration bindings."
+      React: "Shipped across EduTrack, SaaS Portal, Forge UI, Synapse, Analytics, E-Commerce, and the UK AI Patient Assistant.",
+      TypeScript: "Used in Envault CLI, Job Board API, Forge UI, and multi-tenant dashboards with strict typing end to end.",
+      "Tailwind CSS": "Primary styling on EduTrack, Forge UI, and this glassmorphic portfolio.",
+      "Node.js": "Powers Express backends and the Envault CLI toolchain.",
+      Express: "REST orchestration for the UK AI Patient Assistant—Gemini routes, tenant config, and compliance middleware.",
+      Fastify: "High-throughput Job Board API with OpenAPI docs and Prisma data access.",
+      OpenAPI: "Interactive Swagger sandbox on the Job Board API workspace.",
+      JWT: "Session and role emulation in the Job Board API auth pipeline.",
+      Jest: "Automated test tab in the Job Board API developer console.",
+      bcrypt: "Password hashing in the Job Board API alongside Prisma user records.",
+      tsup: "Bundles the Envault CLI for dual CJS/ESM distribution.",
+      "AES-256-GCM": "Vault encryption core in Envault CLI for environment secrets.",
+      PBKDF2: "Key derivation for Envault CLI master keys before envelope encryption.",
+      "Prisma ORM": "Schema and migrations on Job Board API with relationship-heavy models.",
+      PostgreSQL: "Primary datastore behind Prisma on the Job Board API.",
+      Redis: "Rate limiting and BullMQ backing store on the Job Board API.",
+      BullMQ: "Background email workers and queue monitor on the Job Board API.",
+      Gemini: "LLM engine for UK clinic receptionist chat with health safety guardrails.",
+      "Socket.io": "Real-time Kanban sync in Synapse Collaboration Workspace.",
+      "Google Cloud Run": "Production deployment for EduTrack faculty/student portals.",
+      "Multi-Tenant Architecture": "Tenant-scoped profiles in the AI Patient Assistant and SaaS Management Portal.",
     };
-    const desc = proficiencies[tag] || "Experienced Practitioner. Proficient in integrating modular packages & clean code practices.";
-    setSelectedSkill({ name: tag, exp: desc });
+    const base =
+      proficiencies[tag] ||
+      "Used in shipped portfolio projects—see Selected Work for live demos.";
+    const projectsLine =
+      usedIn.length > 0 ? `\n\nFeatured in: ${usedIn.join(", ")}.` : "";
+    setSelectedSkill({ name: tag, exp: base + projectsLine });
   };
 
   return (
@@ -681,7 +700,7 @@ export default function App() {
 
           {/* Nav Items — centered column */}
           <ul className="hidden md:flex items-center justify-center gap-8 text-xs uppercase tracking-[0.2em] font-medium text-app-muted">
-            {["skills", "projects", "experience", "insights"].map((sec) => (
+            {["projects", "experience", "insights", "skills"].map((sec) => (
               <li key={sec}>
                 <a
                   href={`#${sec === "insights" ? "blog" : sec}`}
@@ -920,65 +939,6 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* SKILLS SECTION */}
-        <section id="skills" className="space-y-12">
-          {/* Section banner */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <span className={`w-6 h-px ${preset.badgeClass.split(' ')[0]} bg-current`} />
-              <span className={`text-[10px] font-mono font-bold tracking-widest uppercase ${preset.badgeClass.split(' ')[1]}`}>
-                01 // Specialized Tools
-              </span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-app-heading uppercase font-mono">
-              Advanced Skill Modules
-            </h2>
-            <p className="text-app-muted text-xs sm:text-sm font-mono max-w-md">
-              Tap any spec modules below to compile exact diagnostics.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {SKILL_CATEGORIES.map((cat, idx) => {
-              // Map icons statically
-              const IconComp = cat.id === "frontend" ? Layout : cat.id === "backend" ? Server : cat.id === "database" ? Database : Smartphone;
-              return (
-                <TiltCard key={cat.id}>
-                  <div className="glass-panel border-app h-full rounded-2xl p-5 group flex flex-col justify-between">
-                    <div>
-                      <div className={`w-10 h-10 rounded-xl bg-app-surface border border-app flex items-center justify-center mb-4 group-hover:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-400/30 group-hover:bg-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-400/5 transition-all`}>
-                        <IconComp className={`w-5 h-5 ${preset.textColor}`} />
-                      </div>
-                      <h3 className="font-mono text-app-secondary font-bold text-xs uppercase tracking-wider mb-3 leading-tight">
-                        {cat.title}
-                      </h3>
-                      <div className="space-y-1.5 mb-6">
-                        {cat.skills.map(s => (
-                          <div 
-                            key={s} 
-                            onClick={() => handleSpotlight(s)}
-                            className="flex items-center justify-between group/line hover:bg-app-surface px-2 py-1 rounded-md transition-colors"
-                          >
-                            <span className="text-[11px] font-mono text-app-muted group-hover/line:text-app-heading transition-colors">{s}</span>
-                            <span className={`text-[8px] font-mono text-app-subtle group-hover/line:${preset.textColor} opacity-0 group-hover/line:opacity-100 transition-all uppercase tracking-wider`}>Inspect</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="text-[9px] font-mono text-app-subtle border-t border-app-soft pt-3 uppercase tracking-wider flex items-center justify-between">
-                      <span>Status</span>
-                      <span className="text-emerald-400 font-bold flex items-center gap-1">
-                        <Check className="w-3 h-3" /> Online
-                      </span>
-                    </div>
-                  </div>
-                </TiltCard>
-              );
-            })}
-          </div>
-        </section>
-
         {/* PROJECTS SECTION */}
         <section id="projects" className="space-y-12">
           {/* Section banner & Filter tabs */}
@@ -987,7 +947,7 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <span className={`w-6 h-px ${preset.badgeClass.split(' ')[0]} bg-current`} />
                 <span className={`text-[10px] font-mono font-bold tracking-widest uppercase ${preset.badgeClass.split(' ')[1]}`}>
-                  02 // Telemetry Works
+                  01 // Telemetry Works
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-app-heading uppercase font-mono">
@@ -1032,9 +992,9 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.96 }}
                   transition={{ duration: 0.35, delay: index * 0.05 }}
-                  className="h-full horizontal-scroll-card"
+                  className="h-full flex flex-col horizontal-scroll-card"
                 >
-                  <TiltCard className="h-full project-card">
+                  <TiltCard className="h-full flex-1 min-h-0 project-card">
                     <article className="glass-panel border-app hover:border-app-strong h-full rounded-2xl overflow-hidden shadow-lg flex flex-col group">
                       
                       <div className="project-card-image border-b border-app-soft">
@@ -1192,7 +1152,7 @@ export default function App() {
             <div className="flex items-center gap-2">
               <span className={`w-6 h-px ${preset.badgeClass.split(' ')[0]} bg-current`} />
               <span className={`text-[10px] font-mono font-bold tracking-widest uppercase ${preset.badgeClass.split(' ')[1]}`}>
-                03 // Career Path
+                02 // Career Path
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-app-heading uppercase font-mono">
@@ -1254,7 +1214,7 @@ export default function App() {
             <div className="flex items-center gap-2">
               <span className={`w-6 h-px ${preset.badgeClass.split(' ')[0]} bg-current`} />
               <span className={`text-[10px] font-mono font-bold tracking-widest uppercase ${preset.badgeClass.split(' ')[1]}`}>
-                04 // Written Notes
+                03 // Written Notes
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-app-heading uppercase font-mono">
@@ -1281,31 +1241,31 @@ export default function App() {
                   </div>
 
                   <div className="p-4 flex-1 flex flex-col">
-                    <div className="flex items-center justify-between text-[9px] font-mono text-app-subtle mb-2">
+                    <div className="flex items-center justify-between text-[10px] font-mono text-app-subtle mb-2">
                       <span className={`${preset.textColor} ${preset.bgSoft} px-2 py-0.5 border ${preset.borderSoft} rounded-md uppercase tracking-wider`}>
                         {post.category}
                       </span>
                       <span>{post.readTime}</span>
                     </div>
 
-                    <h3 className="text-xs sm:text-sm font-extrabold text-app-heading uppercase tracking-tight leading-snug font-mono mb-2">
+                    <h3 className="text-sm sm:text-base font-extrabold text-app-heading uppercase tracking-tight leading-snug font-mono mb-2">
                       {post.title}
                     </h3>
 
-                    <p className="text-[10px] text-app-muted line-clamp-2 leading-relaxed font-mono flex-1">
+                    <p className="text-[11px] sm:text-xs text-app-muted line-clamp-2 leading-relaxed font-mono flex-1">
                       {post.summary}
                     </p>
 
                     <div className="border-t border-app-soft pt-3 mt-4 flex items-center justify-between">
-                      <span className="text-[9px] font-mono text-app-subtle">{post.date}</span>
+                      <span className="text-[10px] font-mono text-app-subtle">{post.date}</span>
                       <button
                         type="button"
                         onClick={() => setSelectedInsight(post)}
                         onMouseEnter={() => setIsHovered(true)}
                         onMouseLeave={() => setIsHovered(false)}
-                        className={`text-[10px] font-mono font-bold ${preset.textColor} hover:text-app-heading transition-colors flex items-center gap-1 uppercase cursor-pointer`}
+                        className={`text-[11px] sm:text-xs font-mono font-bold ${preset.textColor} hover:text-app-heading transition-colors flex items-center gap-1 uppercase cursor-pointer`}
                       >
-                        Inspect Module_ <BookOpen className="w-3.5 h-3.5" />
+                        Inspect Module_ <BookOpen className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -1313,6 +1273,77 @@ export default function App() {
               </TiltCard>
             ))}
           </GlassScrollRail>
+        </section>
+
+        {/* SKILLS SECTION */}
+        <section id="skills" className="space-y-12">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className={`w-6 h-px ${preset.badgeClass.split(' ')[0]} bg-current`} />
+              <span className={`text-[10px] font-mono font-bold tracking-widest uppercase ${preset.badgeClass.split(' ')[1]}`}>
+                04 // Specialized Tools
+              </span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-app-heading uppercase font-mono">
+              Advanced Skill Modules
+            </h2>
+            <p className="text-app-muted text-xs sm:text-sm font-mono max-w-md">
+              Tap any spec modules below to compile exact diagnostics.
+            </p>
+          </div>
+
+          <div className="skill-modules-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {SKILL_CATEGORIES.map((cat) => {
+              const IconComp =
+                cat.id === "frontend"
+                  ? Layout
+                  : cat.id === "backend"
+                    ? Server
+                    : cat.id === "data"
+                      ? Database
+                      : Sparkles;
+              const hasScroll = cat.skills.length > 3;
+              return (
+                <TiltCard key={cat.id} className="h-full">
+                  <div className="skill-module-card glass-panel border-app rounded-2xl p-6 sm:p-7 group">
+                    <div className={`w-12 h-12 rounded-xl bg-app-surface border border-app flex items-center justify-center mb-5 shrink-0`}>
+                      <IconComp className={`w-6 h-6 ${preset.textColor}`} />
+                    </div>
+                    <h3 className="font-mono text-app-heading font-bold text-xs sm:text-sm uppercase tracking-wider mb-4 leading-snug shrink-0">
+                      {cat.title}
+                    </h3>
+                    <div
+                      className={`skill-module-list space-y-2 ${hasScroll ? "skill-module-list--scrollable" : ""}`}
+                    >
+                      {cat.skills.map((s) => (
+                        <div
+                          key={s}
+                          onClick={() => handleSpotlight(s)}
+                          className="skill-module-row flex items-center justify-between group/line hover:bg-app-surface px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <span className="text-xs sm:text-[13px] font-mono font-semibold text-app-secondary group-hover/line:text-app-heading transition-colors">
+                            {s}
+                          </span>
+                          <span className={`text-[10px] sm:text-[11px] font-mono font-semibold text-app-subtle group-hover/line:${preset.textColor} opacity-0 group-hover/line:opacity-100 transition-all uppercase tracking-wider`}>
+                            Inspect
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="text-[10px] sm:text-[11px] font-mono text-app-muted border-t border-app-soft pt-4 uppercase tracking-wider flex items-center justify-between shrink-0 mt-auto">
+                      <span>
+                        {cat.skills.length} modules
+                        {hasScroll ? " · scroll" : ""}
+                      </span>
+                      <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Shipped
+                      </span>
+                    </div>
+                  </div>
+                </TiltCard>
+              );
+            })}
+          </div>
         </section>
 
         {/* Project insight popup */}

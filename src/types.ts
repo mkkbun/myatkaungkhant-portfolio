@@ -104,33 +104,6 @@ export const INITIAL_PROFILE: Profile = {
   happyClients: 8,
 };
 
-export const SKILL_CATEGORIES: SkillCategory[] = [
-  {
-    id: "frontend",
-    title: "Frontend Engineering",
-    icon: "Layout",
-    skills: ["React", "Next.js", "TypeScript", "Tailwind CSS", "Redux Toolkit", "Framer Motion", "HTML5/CSS3"],
-  },
-  {
-    id: "backend",
-    title: "Backend & Systems",
-    icon: "Server",
-    skills: ["Node.js", "Express", "Prisma ORM", "GraphQL", "REST APIs", "WebSockets", "Docker"],
-  },
-  {
-    id: "database",
-    title: "Data Architecture",
-    icon: "Database",
-    skills: ["PostgreSQL", "SQL Server", "T-SQL", "Redis", "MongoDB", "Firestore"],
-  },
-  {
-    id: "mobile",
-    title: "Mobile Platforms",
-    icon: "Smartphone",
-    skills: ["Flutter", "Dart", "SwiftUI", "React Native", "Cross-Platform Optimization"],
-  },
-];
-
 export const PROJECTS: Project[] = [
   {
     id: "ai-patient-assistant",
@@ -273,6 +246,69 @@ export const PROJECTS: Project[] = [
     architecture: ["Fastify + OpenAPI Sandbox", "Prisma PostgreSQL Layer", "BullMQ Email Workers", "Redis Sliding Rate Limiter"],
   },
 ];
+
+type SkillBucket = "frontend" | "backend" | "data" | "ai";
+
+const PROJECT_TECH: { match: RegExp; skill: string; bucket: SkillBucket }[] = [
+  { match: /\breact\b/i, skill: "React", bucket: "frontend" },
+  { match: /\btypescript\b/i, skill: "TypeScript", bucket: "frontend" },
+  { match: /\btailwind\b/i, skill: "Tailwind CSS", bucket: "frontend" },
+  { match: /\bnode\.?js\b/i, skill: "Node.js", bucket: "backend" },
+  { match: /\bexpress\b/i, skill: "Express", bucket: "backend" },
+  { match: /\bfastify\b/i, skill: "Fastify", bucket: "backend" },
+  { match: /\bopenapi\b|swagger/i, skill: "OpenAPI", bucket: "backend" },
+  { match: /\bjwt\b/i, skill: "JWT", bucket: "backend" },
+  { match: /\bjest\b/i, skill: "Jest", bucket: "backend" },
+  { match: /\bbcrypt\b/i, skill: "bcrypt", bucket: "backend" },
+  { match: /\btsup\b/i, skill: "tsup", bucket: "backend" },
+  { match: /\baes-256\b/i, skill: "AES-256-GCM", bucket: "backend" },
+  { match: /\bpbkdf2\b/i, skill: "PBKDF2", bucket: "backend" },
+  { match: /\bprisma\b/i, skill: "Prisma ORM", bucket: "data" },
+  { match: /\bpostgres/i, skill: "PostgreSQL", bucket: "data" },
+  { match: /\bredis\b/i, skill: "Redis", bucket: "data" },
+  { match: /\bbullmq\b/i, skill: "BullMQ", bucket: "data" },
+  { match: /\bgemini\b/i, skill: "Gemini", bucket: "ai" },
+  { match: /\bsocket\.?io\b/i, skill: "Socket.io", bucket: "ai" },
+  { match: /\bgoogle cloud run\b|cloud run/i, skill: "Google Cloud Run", bucket: "ai" },
+  { match: /\bmulti-tenant\b/i, skill: "Multi-Tenant Architecture", bucket: "ai" },
+];
+
+export function projectSkillBlob(project: Project): string {
+  return [project.language, project.description, project.fullDetails, ...project.architecture].join(" ");
+}
+
+function buildSkillCategoriesFromProjects(projects: Project[]): SkillCategory[] {
+  const buckets: Record<SkillBucket, Set<string>> = {
+    frontend: new Set(),
+    backend: new Set(),
+    data: new Set(),
+    ai: new Set(),
+  };
+
+  for (const project of projects) {
+    const blob = projectSkillBlob(project);
+    for (const { match, skill, bucket } of PROJECT_TECH) {
+      if (match.test(blob)) buckets[bucket].add(skill);
+    }
+  }
+
+  const sorted = (skills: string[]) => [...skills].sort((a, b) => a.localeCompare(b));
+
+  return [
+    { id: "frontend", title: "Frontend & UI", icon: "Layout", skills: sorted([...buckets.frontend]) },
+    { id: "backend", title: "Backend & APIs", icon: "Server", skills: sorted([...buckets.backend]) },
+    { id: "data", title: "Data & Queues", icon: "Database", skills: sorted([...buckets.data]) },
+    { id: "ai", title: "AI & Real-Time", icon: "Sparkles", skills: sorted([...buckets.ai]) },
+  ].filter((cat) => cat.skills.length > 0);
+}
+
+export const SKILL_CATEGORIES: SkillCategory[] = buildSkillCategoriesFromProjects(PROJECTS);
+
+export function projectsUsingSkill(skill: string, projects: Project[] = PROJECTS): string[] {
+  const entry = PROJECT_TECH.find((t) => t.skill === skill);
+  if (!entry) return [];
+  return projects.filter((p) => entry.match.test(projectSkillBlob(p))).map((p) => p.title);
+}
 
 export const EXPERIENCES: Experience[] = [
   {

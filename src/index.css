@@ -417,6 +417,7 @@ ul {
 
 .horizontal-scroll-track {
   display: flex;
+  align-items: stretch;
   gap: 1.5rem;
   overflow-x: auto;
   overflow-y: visible;
@@ -596,6 +597,9 @@ ul {
 }
 
 .horizontal-scroll-card {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
   width: min(85vw, 360px);
 }
 
@@ -613,4 +617,45 @@ ul {
   .horizontal-scroll-card--wide {
     width: min(45vw, 420px);
   }
+}
+
+.skill-modules-grid {
+  align-items: stretch;
+}
+
+.skill-module-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 20rem;
+  height: 100%;
+}
+
+.skill-module-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 8.75rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin-bottom: 1rem;
+  padding-right: 0.35rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--app-scrollbar-thumb) transparent;
+}
+
+.skill-module-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.skill-module-list::-webkit-scrollbar-thumb {
+  background: var(--app-scrollbar-thumb);
+  border-radius: 999px;
+}
+
+.skill-module-list--scrollable {
+  mask-image: linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%);
+}
+
+.skill-module-row {
+  flex-shrink: 0;
 }
