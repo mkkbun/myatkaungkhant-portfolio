@@ -16,9 +16,12 @@ export function buildPortfolioContext(): string {
       `- ${p.title} (${p.category}): ${p.description} Stack: ${p.language}. Live: ${p.liveUrl} GitHub: ${p.githubUrl}`
   ).join("\n");
 
-  const experience = EXPERIENCES.map(
-    (e) => `- ${e.period} | ${e.role} @ ${e.company} (${e.location}): ${e.description}`
-  ).join("\n");
+  const experience = EXPERIENCES.map((e) => {
+    const body = e.highlights?.length
+      ? e.highlights.map((h) => `  • ${h}`).join("\n")
+      : e.description;
+    return `- ${e.period} | ${e.role} @ ${e.company} (${e.location}):\n${body}`;
+  }).join("\n\n");
 
   const featured = BLOG_POSTS.map((b) => `- ${b.title}: ${b.summary}`).join("\n");
 
@@ -30,6 +33,8 @@ Email: ${INITIAL_PROFILE.email}
 Phone: ${INITIAL_PROFILE.phone}
 Bio: ${INITIAL_PROFILE.bio}
 GitHub: ${INITIAL_PROFILE.githubUrl}
+LinkedIn: ${INITIAL_PROFILE.linkedinUrl}
+CV download: ${INITIAL_PROFILE.cvUrl}
 Years of experience: ${INITIAL_PROFILE.yearsExperience}
 Projects completed: ${INITIAL_PROFILE.completedProjects}
 
@@ -99,6 +104,14 @@ export function answerPortfolioQuestion(raw: string): string {
 
   if (includesAny(q, ["github", "git hub", "repo"])) {
     return `GitHub profile: ${p.githubUrl}. Each project card also has its own repository link.`;
+  }
+
+  if (includesAny(q, ["linkedin", "linked in"])) {
+    return `LinkedIn profile: ${p.linkedinUrl}`;
+  }
+
+  if (includesAny(q, ["cv", "resume", "curriculum"])) {
+    return `You can download his CV from the hero section ("Download CV") or directly at ${p.cvUrl}.`;
   }
 
   if (includesAny(q, ["skill", "stack", "technology", "tech", "know", "framework"])) {

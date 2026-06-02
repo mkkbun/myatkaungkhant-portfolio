@@ -8,6 +8,8 @@ export interface Profile {
   githubUrl: string;
   linkedinUrl: string;
   twitterUrl: string;
+  cvUrl: string;
+  cvFileName: string;
   email: string;
   yearsExperience: number;
   completedProjects: number;
@@ -42,6 +44,7 @@ export interface Experience {
   company: string;
   location: string;
   description: string;
+  highlights?: string[];
   tags: string[];
 }
 
@@ -96,8 +99,10 @@ export const INITIAL_PROFILE: Profile = {
   phone: "+44 7774414594",
   avatarEmoji: "⚡",
   githubUrl: "https://github.com/mkkbun",
-  linkedinUrl: "https://linkedin.com/in/",
+  linkedinUrl: "https://www.linkedin.com/in/myat-kaung-khant-75141b18b/",
   twitterUrl: "https://twitter.com/",
+  cvUrl: "/Myat_Kaung_Khant_CV.pdf",
+  cvFileName: "Myat_Kaung_Khant_CV.pdf",
   email: "myatkaungkhant022@gmail.com",
   yearsExperience: 2,
   completedProjects: 9,
@@ -312,31 +317,58 @@ export function projectsUsingSkill(skill: string, projects: Project[] = PROJECTS
 
 export const EXPERIENCES: Experience[] = [
   {
-    id: "exp-senior",
-    period: "2024 — PRESENT",
-    role: "Senior Full-Stack Engineer",
-    company: "Stripe-Alliance Labs",
-    location: "San Francisco / Hybrid",
-    description: "Lead developers on critical customer analytics screens. Modernized frontends to strict Tailwind + standard React states, speeding up page interactions by 45%. Oversaw container migrations, CI processes, and Prisma schema definitions.",
-    tags: ["React Space", "TypeScript Core", "Next.js 15", "Prisma ORM", "SQL Indexing"],
+    id: "exp-freelance",
+    period: "2025 — PRESENT",
+    role: "Freelance Full Stack Developer",
+    company: "Self-Employed",
+    location: "Remote / East London",
+    description:
+      "Deliver end-to-end web applications for real-world clients — owning every layer from requirements and UI/UX through API design, database architecture, and cloud deployment.",
+    highlights: [
+      "Deliver end-to-end web applications for real-world clients — owning every layer from requirements and UI/UX through API design, database architecture, and cloud deployment.",
+      "Build responsive, high-performance frontends with React 18 and Next.js 14, leveraging SSR and ISR to optimise Core Web Vitals and SEO for client sites.",
+      "Design and implement RESTful and GraphQL APIs using Fastify and Express.js, secured with JWT authentication and role-based access control.",
+      "Integrate WebSocket communication (Socket.io) for real-time features — live dashboards, push notifications, and collaborative data updates.",
+      "Provision cloud infrastructure on AWS (EC2, S3, CloudFront) and Google Cloud Run; configure Nginx reverse proxies and automate deployments with GitHub Actions CI/CD pipelines.",
+      "Manage relational and NoSQL databases — PostgreSQL with Prisma ORM, TimescaleDB for time-series workloads, MongoDB, and Redis for caching and rate limiting.",
+      "Leverage AI developer tools (Claude API, Gemini, ChatGPT, Cursor) to accelerate feature delivery, code reviews, and AI-assisted content generation for clients.",
+    ],
+    tags: ["React 18", "Next.js 14", "Fastify", "AWS", "PostgreSQL", "Socket.io", "Prisma"],
   },
   {
-    id: "exp-mid",
-    period: "2022 — 2024",
-    role: "Software Solutions Engineer",
-    company: "Prismatek Digital",
+    id: "exp-subfero",
+    period: "JUN 2024 — DEC 2024",
+    role: "Web Development Intern",
+    company: "Subfero",
+    location: "Bristol, UK",
+    description:
+      "Supported the development team in building and maintaining client-facing web applications using React, TypeScript, and Node.js.",
+    highlights: [
+      "Supported the development team in building and maintaining client-facing web applications using React, TypeScript, and Node.js.",
+      "Assisted in migrating a legacy JavaScript codebase to TypeScript, improving type safety and reducing runtime errors across key modules.",
+      "Implemented responsive UI components using Tailwind CSS and Radix UI, following accessibility best practices and agency design guidelines.",
+      "Contributed to REST API development with Express.js and integrated third-party services including payment gateways and email providers.",
+      "Gained practical exposure to Git workflows, code reviews, agile ceremonies, and deploying applications to cloud environments.",
+    ],
+    tags: ["React", "TypeScript", "Tailwind CSS", "Radix UI", "Express.js", "Node.js"],
+  },
+  {
+    id: "exp-thailand-contract",
+    period: "SEP 2023 — MAY 2024",
+    role: "Junior Full Stack Developer",
+    company: "Remote — Contract (Thailand)",
     location: "Remote",
-    description: "Shipped three core production releases written in Node/Express and Flutter. Created a modular UI component library, slashing team engineering delivery times for cross-platform layouts by half.",
-    tags: ["Flutter Canvas", "Dart Language", "REST API Modules", "Express", "Tailwind CSS"],
-  },
-  {
-    id: "exp-agency",
-    period: "2020 — 2022",
-    role: "Frontend Specialist & Developer",
-    company: "Solis Agency",
-    location: "San Francisco, CA",
-    description: "Wired interactive interfaces for high-growth tech firms. Converted Figma mockups to pixel-perfect, accessibly-tested markup with smooth, layout-safe transitions.",
-    tags: ["HTML5 Layout", "Vanilla JS", "Tailwind styling", "Responsive Design", "Git Control"],
+    description:
+      "Joined a remote development team to build and maintain full-stack web features across React frontends and Node.js backend services.",
+    highlights: [
+      "Joined a remote development team to build and maintain full-stack web features across React frontends and Node.js backend services.",
+      "Developed new feature modules using React 18 and TypeScript, improving UI consistency and reducing component re-renders with memoisation and code-splitting.",
+      "Implemented a GraphQL data layer to replace legacy REST endpoints, reducing average API response time by approximately 25%.",
+      "Built a real-time notification system using Socket.io and Redis pub/sub, delivering sub-100 ms event propagation to connected clients.",
+      "Wrote Docker Compose configurations for reproducible dev environments and contributed to migrating staging workloads to Google Cloud Run.",
+      "Participated in agile sprints, pull request reviews, and maintained technical documentation in a fully distributed team.",
+    ],
+    tags: ["React 18", "TypeScript", "GraphQL", "Socket.io", "Docker", "Google Cloud Run"],
   },
 ];
 
