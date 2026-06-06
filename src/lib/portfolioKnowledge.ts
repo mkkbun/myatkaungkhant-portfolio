@@ -145,6 +145,13 @@ export function answerPortfolioQuestion(raw: string): string {
     return `Projects (${PROJECTS.length}):\n${PROJECTS.map((proj) => `• ${proj.title} — ${proj.description.slice(0, 90)}…`).join("\n")}\n\nAsk about a specific project by name (e.g. EduTrack, Envault).`;
   }
 
+  if (includesAny(q, ["pos", "apex", "inventory", "retail", "checkout"])) {
+    const proj = PROJECTS.find((x) => x.id === "pos-inventory");
+    return proj
+      ? `${proj.title}: ${proj.description}\nLive: ${proj.liveUrl}\nGitHub: ${proj.githubUrl}`
+      : "See Apex POS & Inventory in his projects.";
+  }
+
   if (includesAny(q, ["edutrack", "edu track"])) {
     const proj = PROJECTS.find((x) => x.id === "edutrack");
     return proj

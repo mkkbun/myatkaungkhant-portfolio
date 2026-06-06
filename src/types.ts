@@ -100,7 +100,7 @@ export const INITIAL_PROFILE: Profile = {
   twitterUrl: "https://twitter.com/",
   email: "myatkaungkhant022@gmail.com",
   yearsExperience: 2,
-  completedProjects: 9,
+  completedProjects: 10,
   happyClients: 8,
 };
 
@@ -123,6 +123,26 @@ export const PROJECTS: Project[] = [
       "Gemini AI Receptionist Chat",
       "UK Compliance & Safety Guardrails",
       "Real-Time Intent Telemetry",
+    ],
+  },
+  {
+    id: "pos-inventory",
+    title: "Apex POS & Inventory",
+    category: "web",
+    language: "React · TypeScript · Express · JWT · Tailwind",
+    description:
+      "A full-stack POS and inventory platform for multi-branch retail—real-time stock alerts, checkout, loyalty CRM, supplier purchase orders, and financial analytics. Built with React, TypeScript, and Express; secured with JWT roles; live on Render.",
+    fullDetails:
+      "Apex POS unifies retail operations in one interface: fast POS checkout with discounts, tax, and loyalty points; multi-branch inventory with transfers, adjustments, and low-stock alerts; supplier purchase orders; customer CRM; and financial analytics with optional Gemini AI insights. Role-based JWT auth (Admin, Manager, Cashier), real-time SSE notifications, and seeded demo data across 3 branches—deployed on Render.",
+    icon: "🏪",
+    imageUrl: "/projects/pos-inventory.png",
+    liveUrl: "https://pos-inventory-app-bm8u.onrender.com/",
+    githubUrl: "https://github.com/mkkbun/POS-Inventory-Management-System",
+    architecture: [
+      "Multi-Branch POS Checkout",
+      "Real-Time Stock Alerts (SSE)",
+      "JWT Role-Based Access Control",
+      "Supplier POs & Financial Analytics",
     ],
   },
   {

@@ -233,7 +233,8 @@ export default function App() {
   const [preset, setPreset] = useState<ColorPreset>(COLOR_PRESETS[0]);
   const [customizerOpen, setCustomizerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "web" | "mobile" | "backend">("all");
-  
+  const [featuredProjectId, setFeaturedProjectId] = useState<string | null>(null);
+
   // Custom interactive cursor position
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [targetPos, setTargetPos] = useState({ x: 0, y: 0 });
@@ -444,17 +445,35 @@ export default function App() {
     return PROJECTS.filter(p => p.category === activeTab);
   }, [activeTab]);
 
+  useEffect(() => {
+    setFeaturedProjectId(null);
+  }, [activeTab]);
+
+  const bentoProjects = useMemo(() => {
+    if (filteredProjects.length === 0) {
+      return { hero: null as Project | null, medium: [] as Project[], compact: [] as Project[] };
+    }
+    const hero =
+      filteredProjects.find((p) => p.id === featuredProjectId) ?? filteredProjects[0];
+    const rest = filteredProjects.filter((p) => p.id !== hero.id);
+    return {
+      hero,
+      medium: rest.slice(0, 2),
+      compact: rest.slice(2),
+    };
+  }, [filteredProjects, featuredProjectId]);
+
   const handleSpotlight = (tag: string) => {
     const usedIn = projectsUsingSkill(tag);
     const proficiencies: Record<string, string> = {
-      React: "Shipped across EduTrack, SaaS Portal, Forge UI, Synapse, Analytics, E-Commerce, and the UK AI Patient Assistant.",
-      TypeScript: "Used in Envault CLI, Job Board API, Forge UI, and multi-tenant dashboards with strict typing end to end.",
-      "Tailwind CSS": "Primary styling on EduTrack, Forge UI, and this glassmorphic portfolio.",
+      React: "Shipped across Apex POS, EduTrack, SaaS Portal, Forge UI, Synapse, Analytics, E-Commerce, and the UK AI Patient Assistant.",
+      TypeScript: "Used in Apex POS, Envault CLI, Job Board API, Forge UI, and multi-tenant dashboards with strict typing end to end.",
+      "Tailwind CSS": "Primary styling on Apex POS, EduTrack, Forge UI, and this glassmorphic portfolio.",
       "Node.js": "Powers Express backends and the Envault CLI toolchain.",
-      Express: "REST orchestration for the UK AI Patient Assistant—Gemini routes, tenant config, and compliance middleware.",
+      Express: "REST APIs for Apex POS retail operations and the UK AI Patient Assistant—auth, inventory, checkout, and compliance middleware.",
       Fastify: "High-throughput Job Board API with OpenAPI docs and Prisma data access.",
       OpenAPI: "Interactive Swagger sandbox on the Job Board API workspace.",
-      JWT: "Session and role emulation in the Job Board API auth pipeline.",
+      JWT: "Role-based access in Apex POS (Admin, Manager, Cashier) and session auth in the Job Board API.",
       Jest: "Automated test tab in the Job Board API developer console.",
       bcrypt: "Password hashing in the Job Board API alongside Prisma user records.",
       tsup: "Bundles the Envault CLI for dual CJS/ESM distribution.",
@@ -464,7 +483,7 @@ export default function App() {
       PostgreSQL: "Primary datastore behind Prisma on the Job Board API.",
       Redis: "Rate limiting and BullMQ backing store on the Job Board API.",
       BullMQ: "Background email workers and queue monitor on the Job Board API.",
-      Gemini: "LLM engine for UK clinic receptionist chat with health safety guardrails.",
+      Gemini: "LLM engine for UK clinic receptionist chat and optional operational insights in Apex POS.",
       "Socket.io": "Real-time Kanban sync in Synapse Collaboration Workspace.",
       "Google Cloud Run": "Production deployment for EduTrack faculty/student portals.",
       "Multi-Tenant Architecture": "Tenant-scoped profiles in the AI Patient Assistant and SaaS Management Portal.",
@@ -981,93 +1000,182 @@ export default function App() {
             </div>
           </div>
 
-          {/* Horizontal scroll layout of Projects */}
-          <GlassScrollRail presetId={preset.id}>
-            <AnimatePresence mode="popLayout">
-              {filteredProjects.map((p, index) => (
-                <motion.div
-                  key={p.id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.96 }}
-                  transition={{ duration: 0.35, delay: index * 0.05 }}
-                  className="h-full flex flex-col horizontal-scroll-card"
+          {/* Bento grid layout of Projects */}
+          <div className="projects-bento-shell glass-panel border-app rounded-2xl p-4 sm:p-5 md:p-6">
+            <AnimatePresence mode="wait">
+              {filteredProjects.length === 0 ? (
+                <motion.p
+                  key="empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="text-center text-app-muted font-mono text-sm py-16"
                 >
-                  <TiltCard className="h-full flex-1 min-h-0 project-card">
-                    <article className="glass-panel border-app hover:border-app-strong h-full rounded-2xl overflow-hidden shadow-lg flex flex-col group">
-                      
-                      <div className="project-card-image border-b border-app-soft">
-                        <img
-                          src={p.imageUrl}
-                          alt={`${p.title} preview`}
-                          loading="lazy"
-                          decoding="async"
-                        />
-                        <div className="absolute top-3 left-3 flex items-center gap-2 z-10">
-                          <span className="text-lg drop-shadow-md" aria-hidden="true">{p.icon}</span>
-                          <span className={`text-[9px] font-mono ${preset.bgSoft10} backdrop-blur-md border ${preset.borderSoft20} ${preset.textColor} px-2 py-0.5 rounded-md uppercase tracking-wider`}>
-                            {p.category}
-                          </span>
+                  No projects in this category yet.
+                </motion.p>
+              ) : (
+                <motion.div
+                  key={`${activeTab}-${bentoProjects.hero?.id}`}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.35 }}
+                  className="projects-bento-grid"
+                >
+                  {bentoProjects.hero && (
+                    <TiltCard className="projects-bento-hero-wrap project-card">
+                      <article className="projects-bento-hero glass-panel border-app hover:border-app-strong rounded-2xl overflow-hidden shadow-lg flex flex-col h-full group">
+                        <div className="projects-bento-hero__image project-card-image border-b border-app-soft">
+                          <img
+                            src={bentoProjects.hero.imageUrl}
+                            alt={`${bentoProjects.hero.title} preview`}
+                            loading="lazy"
+                            decoding="async"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[var(--app-bg-card)] via-transparent to-transparent pointer-events-none" />
+                          <div className="absolute top-3 left-3 flex items-center gap-2 z-10">
+                            <span className="text-xl drop-shadow-md" aria-hidden="true">{bentoProjects.hero.icon}</span>
+                            <span className={`text-[9px] font-mono ${preset.bgSoft10} backdrop-blur-md border ${preset.borderSoft20} ${preset.textColor} px-2 py-0.5 rounded-md uppercase tracking-wider`}>
+                              Featured · {bentoProjects.hero.category}
+                            </span>
+                          </div>
                         </div>
-                        <div className="absolute top-3 right-3 z-10">
-                          <span className="text-[9px] font-mono bg-app-overlay/80 backdrop-blur-md border border-app text-app-muted px-2 py-0.5 rounded-md uppercase tracking-wider">
-                            {String(index + 1).padStart(2, "0")}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="p-5 flex-1 flex flex-col">
-                        <p className={`text-[9px] font-mono ${preset.textColor} font-bold mb-1.5 uppercase tracking-wider leading-relaxed`}>
-                          {p.language}
-                        </p>
-                        <h3 className={`text-base font-bold text-app-heading tracking-tight font-mono mb-2 ${preset.glowText} transition-colors`}>
-                          {p.title}
-                        </h3>
-                        <p className="text-[11px] text-app-muted leading-relaxed font-mono mb-5 flex-1">
-                          {p.description}
-                        </p>
-
-                        <div className="flex gap-2 mb-3">
-                          <a
-                            href={p.liveUrl}
-                            target="_blank"
-                            rel="noreferrer"
+                        <div className="projects-bento-hero__body p-5 sm:p-6 flex flex-col flex-1">
+                          <p className={`text-[9px] font-mono ${preset.textColor} font-bold mb-2 uppercase tracking-wider`}>
+                            {bentoProjects.hero.language}
+                          </p>
+                          <h3 className={`text-lg sm:text-xl font-bold text-app-heading tracking-tight font-mono mb-2 ${preset.glowText}`}>
+                            {bentoProjects.hero.title}
+                          </h3>
+                          <p className="text-[11px] sm:text-xs text-app-muted leading-relaxed font-mono mb-5 flex-1 line-clamp-4">
+                            {bentoProjects.hero.description}
+                          </p>
+                          <div className="flex gap-2 mb-3 mt-auto">
+                            <a
+                              href={bentoProjects.hero.liveUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              onMouseEnter={() => setIsHovered(true)}
+                              onMouseLeave={() => setIsHovered(false)}
+                              className="project-link-btn project-link-btn--live"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" /> Live Demo
+                            </a>
+                            <a
+                              href={bentoProjects.hero.githubUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              onMouseEnter={() => setIsHovered(true)}
+                              onMouseLeave={() => setIsHovered(false)}
+                              className="project-link-btn project-link-btn--github"
+                            >
+                              <Github className="w-3.5 h-3.5" /> GitHub
+                            </a>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => startTerminalSimulator(bentoProjects.hero!)}
                             onMouseEnter={() => setIsHovered(true)}
                             onMouseLeave={() => setIsHovered(false)}
-                            className="project-link-btn project-link-btn--live"
+                            className="w-full py-2.5 text-[9px] font-mono tracking-wider text-app-subtle hover:text-app-heading bg-app-surface hover:bg-app-surface-hover rounded-lg border border-app-soft transition-colors uppercase flex items-center justify-center gap-1.5 cursor-pointer"
                           >
-                            <ExternalLink className="w-3.5 h-3.5" /> Live Demo
-                          </a>
-                          <a
-                            href={p.githubUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            onMouseEnter={() => setIsHovered(true)}
-                            onMouseLeave={() => setIsHovered(false)}
-                            className="project-link-btn project-link-btn--github"
-                          >
-                            <Github className="w-3.5 h-3.5" /> GitHub
-                          </a>
+                            <Terminal className={`w-3.5 h-3.5 ${preset.textColor}`} />
+                            Inspect architecture
+                          </button>
                         </div>
+                      </article>
+                    </TiltCard>
+                  )}
 
+                  {bentoProjects.medium.length > 0 && (
+                    <div className="projects-bento-medium-col">
+                      {bentoProjects.medium.map((p) => (
+                        <TiltCard key={p.id} className="project-card flex-1 min-h-0">
+                          <article className="projects-bento-medium glass-panel border-app hover:border-app-strong rounded-2xl overflow-hidden shadow-lg flex flex-col sm:flex-row h-full group">
+                            <div className="projects-bento-medium__image project-card-image border-b sm:border-b-0 sm:border-r border-app-soft shrink-0">
+                              <img src={p.imageUrl} alt={`${p.title} preview`} loading="lazy" decoding="async" />
+                            </div>
+                            <div className="p-4 flex flex-col flex-1 min-w-0">
+                              <p className={`text-[8px] font-mono ${preset.textColor} font-bold mb-1 uppercase tracking-wider truncate`}>
+                                {p.language}
+                              </p>
+                              <h3 className="text-sm font-bold text-app-heading tracking-tight font-mono mb-1.5 line-clamp-1">
+                                {p.title}
+                              </h3>
+                              <p className="text-[10px] text-app-muted leading-relaxed font-mono mb-3 flex-1 line-clamp-2">
+                                {p.description}
+                              </p>
+                              <div className="flex gap-1.5 mb-2 mt-auto">
+                                <a
+                                  href={p.liveUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onMouseEnter={() => setIsHovered(true)}
+                                  onMouseLeave={() => setIsHovered(false)}
+                                  className="project-link-btn project-link-btn--live text-[8px] py-1.5"
+                                >
+                                  <ExternalLink className="w-3 h-3" /> Demo
+                                </a>
+                                <a
+                                  href={p.githubUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onMouseEnter={() => setIsHovered(true)}
+                                  onMouseLeave={() => setIsHovered(false)}
+                                  className="project-link-btn project-link-btn--github text-[8px] py-1.5 px-2"
+                                >
+                                  <Github className="w-3 h-3" />
+                                </a>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => startTerminalSimulator(p)}
+                                className="w-full py-1.5 text-[8px] font-mono tracking-wider text-app-subtle hover:text-app-heading bg-app-surface hover:bg-app-surface-hover rounded-md border border-app-soft transition-colors uppercase flex items-center justify-center gap-1 cursor-pointer"
+                              >
+                                <Terminal className={`w-3 h-3 ${preset.textColor}`} />
+                                Inspect
+                              </button>
+                            </div>
+                          </article>
+                        </TiltCard>
+                      ))}
+                    </div>
+                  )}
+
+                  {bentoProjects.compact.length > 0 && (
+                    <div className="projects-bento-compact-row">
+                      {bentoProjects.compact.map((p) => (
                         <button
+                          key={p.id}
                           type="button"
-                          onClick={() => startTerminalSimulator(p)}
+                          onClick={() => setFeaturedProjectId(p.id)}
                           onMouseEnter={() => setIsHovered(true)}
                           onMouseLeave={() => setIsHovered(false)}
-                          className="w-full py-2 text-[9px] font-mono tracking-wider text-app-subtle hover:text-app-heading bg-app-surface hover:bg-app-surface-hover rounded-lg border border-app-soft transition-colors uppercase flex items-center justify-center gap-1.5 cursor-pointer"
+                          className="projects-bento-compact glass-panel border-app hover:border-app-strong rounded-xl p-3 text-left transition-all hover:-translate-y-0.5 group"
                         >
-                          <Terminal className={`w-3.5 h-3.5 ${preset.textColor}`} />
-                          Inspect architecture
+                          <div className="flex items-start gap-2.5">
+                            <span className="text-lg shrink-0" aria-hidden="true">{p.icon}</span>
+                            <div className="min-w-0 flex-1">
+                              <h4 className="text-[11px] font-bold text-app-heading font-mono uppercase tracking-tight line-clamp-1 group-hover:text-app-heading">
+                                {p.title}
+                              </h4>
+                              <p className={`text-[8px] font-mono ${preset.textColor} mt-1 uppercase tracking-wider line-clamp-1`}>
+                                {p.language}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-app-soft">
+                            <span className="text-[8px] font-mono text-app-subtle uppercase">View featured</span>
+                            <ArrowRight className={`w-3 h-3 ${preset.textColor} opacity-60 group-hover:opacity-100 transition-opacity`} />
+                          </div>
                         </button>
-                      </div>
-                    </article>
-                  </TiltCard>
+                      ))}
+                    </div>
+                  )}
                 </motion.div>
-              ))}
+              )}
             </AnimatePresence>
-          </GlassScrollRail>
+          </div>
 
           {/* Interactive Live API terminal logger */}
           <AnimatePresence>
