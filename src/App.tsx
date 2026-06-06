@@ -21,7 +21,8 @@ import {
   Sliders, 
   Globe, 
   Terminal, 
-  ArrowRight, 
+  ArrowRight,
+  Download,
   BookOpen, 
   Briefcase, 
   MapPin, 
@@ -811,6 +812,16 @@ export default function App() {
               >
                 Inquire Telemetry
               </a>
+
+              <a
+                href={profile.cvUrl}
+                download={profile.cvFileName}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+                className="px-8 py-4 bg-app-surface border border-app backdrop-blur-md text-app-heading text-xs font-bold uppercase tracking-widest rounded-full hover:bg-app-surface-hover hover:border-app-strong transition-all font-mono flex items-center gap-2"
+              >
+                Download CV <Download className="w-4 h-4" />
+              </a>
             </div>
 
             {/* Stat Counters with responsive values */}
@@ -1294,9 +1305,17 @@ export default function App() {
                     <span>{exp.location}</span>
                   </div>
 
-                  <p className="text-app-muted text-xs sm:text-sm font-mono max-w-2xl leading-relaxed pt-2">
-                    {exp.description}
-                  </p>
+                  {exp.highlights?.length ? (
+                    <ul className="text-app-muted text-xs sm:text-sm font-mono max-w-2xl leading-relaxed pt-2 space-y-2 list-disc pl-4 marker:text-app-subtle">
+                      {exp.highlights.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-app-muted text-xs sm:text-sm font-mono max-w-2xl leading-relaxed pt-2">
+                      {exp.description}
+                    </p>
+                  )}
 
                   <div className="flex flex-wrap gap-1.5 pt-3">
                     {exp.tags.map((t) => (
