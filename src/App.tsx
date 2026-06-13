@@ -36,8 +36,10 @@ import {
   Lock,
   Sun,
   Moon,
+  Menu,
 } from "lucide-react";
 import { useTheme } from "./hooks/useTheme";
+import { useReducedMotion } from "./hooks/useReducedMotion";
 import PortfolioChat from "./components/PortfolioChat";
 import { 
   INITIAL_PROFILE, 
@@ -49,6 +51,7 @@ import {
   Project,
   BlogPost,
   projectsUsingSkill,
+  projectTechTags,
 } from "./types";
 import Interactive3DCanvas from "./components/Interactive3DCanvas";
 import GlassScrollRail from "./components/GlassScrollRail";
@@ -60,15 +63,17 @@ interface TiltCardProps {
   className?: string;
   onClick?: () => void;
   key?: React.Key;
+  motionEnabled?: boolean;
 }
 
-function TiltCard({ children, className = "", onClick }: TiltCardProps) {
+function TiltCard({ children, className = "", onClick, motionEnabled = true }: TiltCardProps) {
   const [rotateX, setRotateX] = useState(0);
   const [rotateY, setRotateY] = useState(0);
   const [scale, setScale] = useState(1);
   const [glareRef, setGlare] = useState({ x: 50, y: 50, opacity: 0 });
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!motionEnabled) return;
     const card = e.currentTarget;
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -103,10 +108,14 @@ function TiltCard({ children, className = "", onClick }: TiltCardProps) {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className={`relative cursor-pointer transition-all duration-200 flex flex-col ${className}`}
-      style={{
-        transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${scale})`,
-        transformStyle: "preserve-3d",
-      }}
+      style={
+        motionEnabled
+          ? {
+              transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${scale})`,
+              transformStyle: "preserve-3d",
+            }
+          : undefined
+      }
     >
       {/* Glare Reflection overlay */}
       <div 
@@ -226,15 +235,24 @@ const COLOR_PRESETS: ColorPreset[] = [
   },
 ];
 
+const NAV_LINKS = [
+  { id: "projects", label: "Projects", href: "#projects" },
+  { id: "experience", label: "Experience", href: "#experience" },
+  { id: "insights", label: "Insights", href: "#blog" },
+  { id: "skills", label: "Skills", href: "#skills" },
+] as const;
+
 export default function App() {
   const { colorMode, setColorMode, isDark } = useTheme();
+  const reducedMotion = useReducedMotion();
 
   // Global States
   const [profile, setProfile] = useState<Profile>(INITIAL_PROFILE);
   const [preset, setPreset] = useState<ColorPreset>(COLOR_PRESETS[0]);
   const [customizerOpen, setCustomizerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "web" | "mobile" | "backend">("all");
-  const [featuredProjectId, setFeaturedProjectId] = useState<string | null>(null);
+  const [featuredProjectId, setFeaturedProjectId] = useState<string | null>("ai-patient-assistant");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Custom interactive cursor position
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
@@ -315,6 +333,11 @@ export default function App() {
 
   // Handle live typewriter intervals
   useEffect(() => {
+    if (reducedMotion) {
+      setTypedWord(typewriterTerms[0]);
+      return;
+    }
+
     const currentText = typewriterTerms[wordIndex];
     let speed = isDeleting ? 40 : 80;
 
@@ -337,7 +360,7 @@ export default function App() {
     }, speed);
 
     return () => clearTimeout(timer);
-  }, [charIndex, isDeleting, wordIndex, typewriterTerms]);
+  }, [charIndex, isDeleting, wordIndex, typewriterTerms, reducedMotion]);
 
   useEffect(() => {
     if (!selectedInsight) return;
@@ -447,7 +470,7 @@ export default function App() {
   }, [activeTab]);
 
   useEffect(() => {
-    setFeaturedProjectId(null);
+    setFeaturedProjectId("ai-patient-assistant");
   }, [activeTab]);
 
   const bentoProjects = useMemo(() => {
@@ -501,7 +524,7 @@ export default function App() {
     <div className="relative min-h-screen font-sans selection:bg-cyan-500/30 selection:text-app-heading overflow-x-hidden text-app bg-app transition-colors duration-300">
       
       {/* Dynamic Cursor for Desktop view */}
-      {!isMobileDevice && (
+      {!isMobileDevice && !reducedMotion && (
         <>
           <div 
             className="fixed pointer-events-none z-[9999] rounded-full -translate-x-1/2 -translate-y-1/2 transition-transform duration-100 select-none pb-0"
@@ -638,7 +661,7 @@ export default function App() {
 
               {/* Live Profile Editing fields */}
               <div className="space-y-3 pt-3 border-t border-app-soft">
-                <label className="text-[10px] font-mono text-app-muted uppercase tracking-wider block">Modify Profile telemetry</label>
+                <label className="text-[10px] font-mono text-app-muted uppercase tracking-wider block">Edit profile</label>
                 
                 <div>
                   <div className="flex justify-between items-center mb-1">
@@ -698,7 +721,7 @@ export default function App() {
                   }}
                   className="w-full py-2 bg-app-surface hover:bg-app-surface-hover border border-app rounded-lg text-app-secondary hover:text-app-heading font-mono text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5"
                 >
-                  <RotateCcw className="w-3 h-3" /> Reset telemetry
+                  <RotateCcw className="w-3 h-3" /> Reset profile
                 </button>
               </div>
             </motion.div>
@@ -711,30 +734,40 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 grid grid-cols-[auto_1fr_auto] items-center gap-4">
           <a 
             href="#home"
+            onClick={() => setMobileNavOpen(false)}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             className="text-xl sm:text-2xl font-bold tracking-tighter brand-gradient italic shrink-0 whitespace-nowrap"
           >
-            {profile.name.split(' ').map(n => n[0].toUpperCase()).join('') || 'JV'}.STUDIO
+            {profile.name.split(' ').map(n => n[0].toUpperCase()).join('') || 'MK'}.STUDIO
           </a>
 
-          {/* Nav Items — centered column */}
+          {/* Nav Items — centered column (desktop) */}
           <ul className="hidden md:flex items-center justify-center gap-8 text-xs uppercase tracking-[0.2em] font-medium text-app-muted">
-            {["projects", "experience", "insights", "skills"].map((sec) => (
-              <li key={sec}>
+            {NAV_LINKS.map((link) => (
+              <li key={link.id}>
                 <a
-                  href={`#${sec === "insights" ? "blog" : sec}`}
+                  href={link.href}
                   onMouseEnter={() => setIsHovered(true)}
                   onMouseLeave={() => setIsHovered(false)}
                   className="hover:text-app-heading transition-colors"
                 >
-                  {sec}
+                  {link.label}
                 </a>
               </li>
             ))}
           </ul>
 
           <div className="flex items-center justify-end gap-3 sm:gap-4 shrink-0">
+            <button
+              type="button"
+              onClick={() => setMobileNavOpen((v) => !v)}
+              className="md:hidden w-10 h-10 rounded-full border border-app flex items-center justify-center bg-app-surface backdrop-blur-md hover:bg-app-surface-hover transition-all"
+              aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileNavOpen}
+            >
+              {mobileNavOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
             <button
               type="button"
               onClick={() => setColorMode(isDark ? "light" : "dark")}
@@ -752,6 +785,7 @@ export default function App() {
             </button>
             <a
               href="#contact"
+              onClick={() => setMobileNavOpen(false)}
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
               className={`px-4 sm:px-6 py-2.5 text-xs font-bold uppercase tracking-widest nav-contact-pill ${preset.bgHover} rounded-full transition-all duration-300 shrink-0`}
@@ -760,6 +794,31 @@ export default function App() {
             </a>
           </div>
         </div>
+
+        <AnimatePresence>
+          {mobileNavOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden border-t border-app-soft bg-app-nav overflow-hidden"
+            >
+              <ul className="px-4 py-4 space-y-1">
+                {NAV_LINKS.map((link) => (
+                  <li key={link.id}>
+                    <a
+                      href={link.href}
+                      onClick={() => setMobileNavOpen(false)}
+                      className="block py-3 px-3 rounded-xl text-sm font-mono uppercase tracking-wider text-app-muted hover:text-app-heading hover:bg-app-surface transition-colors"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       {/* Main Content Area */}
@@ -771,22 +830,40 @@ export default function App() {
           {/* Hero left content info */}
           <div className="lg:col-span-7 space-y-8">
             
-            {/* Subtitle Badge */}
-            <div className={`inline-block px-3 py-1 bg-app-surface backdrop-blur-md border border-app rounded-full text-[10px] uppercase tracking-widest ${preset.textColor} font-bold mb-2 w-fit`}>
-              {profile.role || "Digital Architect"}
+            {/* Open to work */}
+            <div className={`inline-flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1.5 bg-app-surface backdrop-blur-md border border-app rounded-full text-[10px] uppercase tracking-wider ${preset.textColor} font-mono font-bold w-fit`}>
+              <span className="relative flex h-2 w-2">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${preset.bgColor} opacity-75`} />
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${preset.bgColor}`} />
+              </span>
+              {profile.availability}
             </div>
 
-            {/* Giant Title headings */}
-            <h1 className="text-6xl sm:text-7xl lg:text-8xl font-light leading-[0.9] tracking-tighter text-app-heading uppercase text-left">
-              CRAFTING<br />
-              <span className="font-medium italic hero-accent-gradient">FUTURE</span><br />
-              DYNAMICS.
-            </h1>
+            {/* Subtitle Badge */}
+            <div className={`inline-block px-3 py-1 bg-app-surface backdrop-blur-md border border-app rounded-full text-[10px] uppercase tracking-widest text-app-muted font-bold w-fit`}>
+              {profile.rightToWork}
+            </div>
+
+            {/* Name + role — recruiter-first headline */}
+            <div className="space-y-3">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.05] tracking-tight text-app-heading">
+                {profile.name}
+              </h1>
+              <p className="text-lg sm:text-xl text-app-secondary font-mono font-medium">
+                {profile.role}
+              </p>
+              <p className={`text-sm sm:text-base font-mono ${preset.textColor}`}>
+                {profile.techStack}
+              </p>
+              <p className="text-base sm:text-lg text-app-muted italic font-light tracking-tight hero-accent-gradient uppercase">
+                Crafting future dynamics.
+              </p>
+            </div>
 
             {/* Interactive console terminal word typing inline */}
-            <div className="text-xl sm:text-2xl text-app-muted font-mono font-light mt-4">
+            <div className="text-lg sm:text-xl text-app-muted font-mono font-light">
               &gt; <span className="text-app-heading font-medium">{typedWord}</span>
-              <span className="animate-[ping_0.9s_infinite] ml-1">_</span>
+              {!reducedMotion && <span className="animate-[ping_0.9s_infinite] ml-1">_</span>}
             </div>
 
             <p className="text-app-muted leading-relaxed max-w-lg text-[14px]">
@@ -801,7 +878,7 @@ export default function App() {
                 onMouseLeave={() => setIsHovered(false)}
                 className={`px-8 py-4 nav-contact-pill text-xs font-bold uppercase tracking-widest rounded-full ${preset.bgHover} transition-colors duration-300 font-mono flex items-center gap-2 cursor-pointer`}
               >
-                View Cases <ArrowRight className="w-4 h-4" />
+                View Projects <ArrowRight className="w-4 h-4" />
               </a>
 
               <a
@@ -810,7 +887,7 @@ export default function App() {
                 onMouseLeave={() => setIsHovered(false)}
                 className="px-8 py-4 bg-app-surface border border-app backdrop-blur-md text-app-heading text-xs font-bold uppercase tracking-widest rounded-full hover:bg-app-surface-hover hover:border-app-strong transition-all font-mono"
               >
-                Inquire Telemetry
+                Get in Touch
               </a>
 
               <a
@@ -831,21 +908,21 @@ export default function App() {
                   <span>{profile.yearsExperience}+</span>
                   <Award className={`w-4 h-4 ml-1 ${preset.textColor} opacity-60`} />
                 </dt>
-                <dd className="text-[10px] font-mono uppercase tracking-wider text-app-subtle mt-1">Years Eng.</dd>
+                <dd className="text-[10px] font-mono uppercase tracking-wider text-app-subtle mt-1">Years Exp.</dd>
               </div>
               <div>
                 <dt className="text-3xl font-extrabold font-mono text-app-heading flex items-center">
                   <span>{profile.completedProjects}+</span>
                   <Code className="w-4 h-4 ml-1 text-purple-400 opacity-60" />
                 </dt>
-                <dd className="text-[10px] font-mono uppercase tracking-wider text-app-subtle mt-1">Core Modules</dd>
+                <dd className="text-[10px] font-mono uppercase tracking-wider text-app-subtle mt-1">Live Projects</dd>
               </div>
               <div>
                 <dt className="text-3xl font-extrabold font-mono text-app-heading flex items-center">
-                  <span>{profile.happyClients}+</span>
-                  <Globe className="w-4 h-4 ml-1 text-emerald-400 opacity-60" />
+                  <span>{BLOG_POSTS.length}</span>
+                  <BookOpen className="w-4 h-4 ml-1 text-emerald-400 opacity-60" />
                 </dt>
-                <dd className="text-[10px] font-mono uppercase tracking-wider text-app-subtle mt-1">Happy Clients</dd>
+                <dd className="text-[10px] font-mono uppercase tracking-wider text-app-subtle mt-1">Case Studies</dd>
               </div>
             </div>
 
@@ -934,7 +1011,7 @@ export default function App() {
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-1.5">
                     <Cpu className={`w-5 h-5 ${preset.textColor}`} />
-                    <h3 className="font-mono text-sm uppercase text-app-secondary tracking-wider">Index Telemetry Spotlight</h3>
+                    <h3 className="font-mono text-sm uppercase text-app-secondary tracking-wider">Skill Spotlight</h3>
                   </div>
                   <button 
                     onClick={() => setSelectedSkill(null)}
@@ -961,7 +1038,7 @@ export default function App() {
                     onClick={() => setSelectedSkill(null)}
                     className="w-full py-2 bg-app-surface hover:bg-app-surface-hover border border-app rounded-xl font-mono text-xs text-app-secondary hover:text-app-heading transition-colors"
                   >
-                    Close telemetry scope
+                    Close
                   </button>
                 </div>
               </motion.div>
@@ -977,14 +1054,14 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <span className={`w-6 h-px ${preset.badgeClass.split(' ')[0]} bg-current`} />
                 <span className={`text-[10px] font-mono font-bold tracking-widest uppercase ${preset.badgeClass.split(' ')[1]}`}>
-                  01 // Telemetry Works
+                  01 // Selected Work
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-app-heading uppercase font-mono">
                 Selected Work
               </h2>
               <p className="text-xs text-app-muted font-mono max-w-md">
-                {PROJECTS.length} full-stack builds — live demos, open source, and production-style UIs.
+                {PROJECTS.length} full-stack builds — live demos, open source, and production-style UIs. Demos on free tiers may take ~30s to wake on first load.
               </p>
             </div>
 
@@ -1034,7 +1111,7 @@ export default function App() {
                   className="projects-bento-grid"
                 >
                   {bentoProjects.hero && (
-                    <TiltCard className="projects-bento-hero-wrap project-card">
+                    <TiltCard motionEnabled={!reducedMotion} className="projects-bento-hero-wrap project-card">
                       <article className="projects-bento-hero glass-panel border-app hover:border-app-strong rounded-2xl overflow-hidden shadow-lg flex flex-col h-full group">
                         <div className="projects-bento-hero__image project-card-image border-b border-app-soft">
                           <img
@@ -1058,8 +1135,21 @@ export default function App() {
                           <h3 className={`text-lg sm:text-xl font-bold text-app-heading tracking-tight font-mono mb-2 ${preset.glowText}`}>
                             {bentoProjects.hero.title}
                           </h3>
-                          <p className="text-[11px] sm:text-xs text-app-muted leading-relaxed font-mono mb-5 flex-1 line-clamp-4">
+                          <p className="text-[11px] sm:text-xs text-app-muted leading-relaxed font-mono mb-3 flex-1 line-clamp-3">
                             {bentoProjects.hero.description}
+                          </p>
+                          <div className="flex flex-wrap gap-1 mb-4">
+                            {projectTechTags(bentoProjects.hero).map((tag) => (
+                              <span
+                                key={tag}
+                                className={`text-[8px] font-mono ${preset.bgSoft10} border ${preset.borderSoft} ${preset.textColor} px-1.5 py-0.5 rounded-md uppercase tracking-wider`}
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                          <p className={`text-[9px] font-mono ${preset.textColor} mb-3 uppercase tracking-wider`}>
+                            ▸ {bentoProjects.hero.architecture[0]}
                           </p>
                           <div className="flex gap-2 mb-3 mt-auto">
                             <a
@@ -1101,7 +1191,7 @@ export default function App() {
                   {bentoProjects.medium.length > 0 && (
                     <div className="projects-bento-medium-col">
                       {bentoProjects.medium.map((p) => (
-                        <TiltCard key={p.id} className="project-card flex-1 min-h-0">
+                        <TiltCard motionEnabled={!reducedMotion} key={p.id} className="project-card flex-1 min-h-0">
                           <article className="projects-bento-medium glass-panel border-app hover:border-app-strong rounded-2xl overflow-hidden shadow-lg flex flex-col sm:flex-row h-full group">
                             <div className="projects-bento-medium__image project-card-image border-b sm:border-b-0 sm:border-r border-app-soft shrink-0">
                               <img src={p.imageUrl} alt={`${p.title} preview`} loading="lazy" decoding="async" />
@@ -1113,9 +1203,19 @@ export default function App() {
                               <h3 className="text-sm font-bold text-app-heading tracking-tight font-mono mb-1.5 line-clamp-1">
                                 {p.title}
                               </h3>
-                              <p className="text-[10px] text-app-muted leading-relaxed font-mono mb-3 flex-1 line-clamp-2">
+                              <p className="text-[10px] text-app-muted leading-relaxed font-mono mb-2 flex-1 line-clamp-2">
                                 {p.description}
                               </p>
+                              <div className="flex flex-wrap gap-1 mb-2">
+                                {projectTechTags(p, 3).map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className={`text-[7px] font-mono ${preset.bgSoft10} border ${preset.borderSoft} ${preset.textColor} px-1 py-0.5 rounded uppercase tracking-wider`}
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
                               <div className="flex gap-1.5 mb-2 mt-auto">
                                 <a
                                   href={p.liveUrl}
@@ -1188,7 +1288,10 @@ export default function App() {
             </AnimatePresence>
           </div>
 
-          {/* Interactive Live API terminal logger */}
+          {/* Interactive architecture terminal */}
+          <p className="text-[11px] font-mono text-app-muted max-w-2xl">
+            Simulated build log — shows how each project is architected when you click <span className="text-app-secondary">Inspect architecture</span> on a project card.
+          </p>
           <AnimatePresence>
             {terminalProject && (
               <motion.div
@@ -1206,7 +1309,7 @@ export default function App() {
                       <span className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
                     </div>
                     <span className="text-[10px] font-mono text-app-muted ml-2">
-                      terminal_telemetry://{terminalProject.id}.sh
+                      terminal_telemetry://{terminalProject?.id || "unknown"}.sh
                     </span>
                   </div>
                   <button
@@ -1225,7 +1328,7 @@ export default function App() {
                   {terminalLogs.map((log, idx) => (
                     <div key={idx} className="flex gap-2">
                       <span className="text-app-subtle select-none">[{idx}]</span>
-                      <span className={log.startsWith("[SUCCESS]") || log.startsWith("✓") ? "text-emerald-400" : log.startsWith("Initialize") ? preset.textColor : "text-app-secondary"}>
+                      <span className={log && (log.startsWith("[SUCCESS]") || log.startsWith("✓")) ? "text-emerald-400" : log && log.startsWith("Initializing") ? preset.textColor : "text-app-secondary"}>
                         {log}
                       </span>
                     </div>
@@ -1246,7 +1349,7 @@ export default function App() {
                   <span className="text-[10px] font-mono text-app-muted uppercase tracking-widest block">System Deployment Schema Map</span>
                   
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-1">
-                    {terminalProject.architecture.map((arch, index) => (
+                    {(terminalProject?.architecture || []).map((arch, index) => (
                       <div key={index} className={`bg-app-surface border border-app rounded-xl p-3 flex flex-col justify-between group hover:border-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500/20 hover:bg-${preset.id === "cyan" ? "sky" : preset.id === "violet" ? "purple" : preset.id === "emerald" ? "emerald" : "amber"}-500/5 transition-colors`}>
                         <div>
                           <div className={`text-[8px] font-mono ${preset.textColor} font-bold uppercase mb-1`}>Node {index + 1}</div>
@@ -1348,13 +1451,13 @@ export default function App() {
               Insights & Diagnostics
             </h2>
             <p className="text-xs text-app-muted font-mono max-w-xl">
-              Featured case studies on four shipped builds—problem, approach, and lessons learned. All {PROJECTS.length} projects live in Selected Work above.
+              Featured case studies on {BLOG_POSTS.length} shipped builds—problem, approach, and lessons learned. All {PROJECTS.length} projects live in Selected Work above.
             </p>
           </div>
 
           <GlassScrollRail presetId={preset.id} scrollStep={420}>
             {BLOG_POSTS.map((post) => (
-              <TiltCard key={post.id} className="h-full horizontal-scroll-card horizontal-scroll-card--wide">
+              <TiltCard motionEnabled={!reducedMotion} key={post.id} className="h-full horizontal-scroll-card horizontal-scroll-card--wide">
                 <article className={`glass-panel border-app hover:border-app-strong h-full rounded-2xl overflow-hidden flex flex-col group`}>
                   <div className="relative h-28 overflow-hidden border-b border-app-soft">
                     <img
@@ -1392,7 +1495,7 @@ export default function App() {
                         onMouseLeave={() => setIsHovered(false)}
                         className={`text-[11px] sm:text-xs font-mono font-bold ${preset.textColor} hover:text-app-heading transition-colors flex items-center gap-1 uppercase cursor-pointer`}
                       >
-                        Inspect Module_ <BookOpen className="w-4 h-4" />
+                        Read Case Study <BookOpen className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -1431,7 +1534,7 @@ export default function App() {
                       : Sparkles;
               const hasScroll = cat.skills.length > 3;
               return (
-                <TiltCard key={cat.id} className="h-full">
+                <TiltCard motionEnabled={!reducedMotion} key={cat.id} className="h-full">
                   <div className="skill-module-card glass-panel border-app rounded-2xl p-6 sm:p-7 group">
                     <div className={`w-12 h-12 rounded-xl bg-app-surface border border-app flex items-center justify-center mb-5 shrink-0`}>
                       <IconComp className={`w-6 h-6 ${preset.textColor}`} />
@@ -1700,6 +1803,7 @@ export default function App() {
               >
                 <Linkedin className="w-5 h-5" />
               </a>
+              {profile.twitterUrl ? (
               <a
                 href={profile.twitterUrl}
                 target="_blank"
@@ -1707,10 +1811,11 @@ export default function App() {
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
                 className="p-2 bg-app-surface hover:bg-app-surface-hover border border-app rounded-xl text-app-muted hover:text-app-heading transition-colors"
-                title="Twitter Link"
+                title="Twitter / X"
               >
                 <Twitter className="w-5 h-5" />
               </a>
+              ) : null}
             </div>
           </div>
 
@@ -1856,11 +1961,11 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-6 text-[10px] font-mono tracking-wider text-app-subtle uppercase">
-            <a href="#skills" className="hover:text-app-heading transition-colors">SPEC GRID</a>
+            <a href="#skills" className="hover:text-app-heading transition-colors">Skills</a>
             <div className="w-1 h-1 bg-app-border rounded-full" />
-            <a href="#projects" className="hover:text-app-heading transition-colors">WORKSPACE</a>
+            <a href="#projects" className="hover:text-app-heading transition-colors">Projects</a>
             <div className="w-1 h-1 bg-app-border rounded-full" />
-            <a href="#contact" className="hover:text-app-heading transition-colors">SATELLITE</a>
+            <a href="#contact" className="hover:text-app-heading transition-colors">Contact</a>
           </div>
         </div>
       </footer>

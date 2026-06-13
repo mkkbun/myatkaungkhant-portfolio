@@ -13,7 +13,11 @@ export interface Profile {
   email: string;
   yearsExperience: number;
   completedProjects: number;
-  happyClients: number;
+  caseStudies: number;
+  cloudDeployments: number;
+  availability: string;
+  rightToWork: string;
+  techStack: string;
 }
 
 export interface SkillCategory {
@@ -67,6 +71,15 @@ export interface BlogPost {
   highlights: string[];
 }
 
+/** First N tech labels parsed from project.language (split on ·) */
+export function projectTechTags(project: Project, limit = 4): string[] {
+  return project.language
+    .split("·")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, limit);
+}
+
 function insightFromProject(
   projectId: string,
   fields: Omit<
@@ -93,20 +106,24 @@ function insightFromProject(
 
 export const INITIAL_PROFILE: Profile = {
   name: "Myat Kaung Khant",
-  role: "Junior Developer & Full Stack Developer",
-  bio: "Junior full stack developer based in East London. I build responsive, high-performance web and mobile products with clean architecture and thoughtful user experience.",
+  role: "Junior Full Stack Developer",
+  bio: "Junior full stack developer based in East London. I ship production-style apps with React, TypeScript, and Node—from AI healthcare chat (Gemini) to multi-branch POS. Ten live demos on Cloud Run and Render.",
   location: "London, East London",
   phone: "+44 7774414594",
   avatarEmoji: "⚡",
   githubUrl: "https://github.com/mkkbun",
   linkedinUrl: "https://www.linkedin.com/in/myat-kaung-khant-75141b18b/",
-  twitterUrl: "https://twitter.com/",
+  twitterUrl: "",
   cvUrl: "/Myat_Kaung_Khant_CV.pdf",
   cvFileName: "Myat_Kaung_Khant_CV.pdf",
   email: "myatkaungkhant022@gmail.com",
   yearsExperience: 2,
   completedProjects: 10,
-  happyClients: 8,
+  caseStudies: 6,
+  cloudDeployments: 3,
+  availability: "Open to junior full-stack roles · East London / Remote UK · Available now",
+  rightToWork: "Right to work in the UK",
+  techStack: "React · TypeScript · Node.js · PostgreSQL",
 };
 
 export const PROJECTS: Project[] = [
@@ -392,8 +409,36 @@ export const EXPERIENCES: Experience[] = [
   },
 ];
 
-/** Featured case studies — 4 selected projects (not the full PROJECTS grid) */
+/** Featured case studies — 6 selected projects (not the full PROJECTS grid) */
 export const BLOG_POSTS: BlogPost[] = [
+  insightFromProject("ai-patient-assistant", {
+    category: "Case Study · AI & Healthcare",
+    date: "Featured · 2026",
+    title: "UK AI Patient Assistant: Safe Clinic Chat with Gemini Guardrails",
+    summary:
+      "Multi-tenant AI receptionist for UK clinics—embeddable widgets, Gemini-powered chat with compliance guardrails, voice support, and real-time intent telemetry.",
+    problem:
+      "Clinics want AI to handle booking and FAQs, but generic chatbots risk medical misinformation, ignore UK data rules, and cannot serve dental, GP, and private practices from one platform.",
+    solution:
+      "I built a full-stack SaaS with tenant-specific clinic profiles, service catalogues, and an embeddable patient widget. Gemini runs behind UK compliance guardrails with voice-enabled concierge chat and a live inspection console that tracks booking leads, warnings, and CRM escalation signals.",
+    learning:
+      "Designing prompt and API guardrails for healthcare, isolating tenant config without leaking data across clinics, and making AI behavior observable through intent telemetry—not just chat transcripts.",
+    readTime: "6 min read",
+  }),
+  insightFromProject("pos-inventory", {
+    category: "Case Study · Full Stack",
+    date: "Featured · 2026",
+    title: "Apex POS: Multi-Branch Retail From Checkout to Analytics",
+    summary:
+      "Full-stack POS and inventory for multi-branch retail—JWT role access, real-time stock alerts via SSE, supplier purchase orders, loyalty CRM, and financial dashboards.",
+    problem:
+      "Small retailers juggle separate tools for checkout, stock counts, and purchase orders. Managers need one system with branch-level visibility and role-appropriate access for cashiers and admins.",
+    solution:
+      "Apex POS unifies fast checkout with discounts, tax, and loyalty points; multi-branch inventory with transfers, adjustments, and low-stock SSE alerts; supplier PO workflows; customer CRM; and financial analytics with optional Gemini insights—secured with JWT roles (Admin, Manager, Cashier) and seeded demo data across three branches.",
+    learning:
+      "Modeling retail domains (branches, SKUs, transfers), pushing real-time alerts without overloading the client, and structuring RBAC so each role sees only what they need at the register and in the back office.",
+    readTime: "6 min read",
+  }),
   insightFromProject("edutrack", {
     category: "Case Study · Full Stack",
     date: "Featured · 2026",

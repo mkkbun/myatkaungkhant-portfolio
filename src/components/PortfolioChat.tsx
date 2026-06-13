@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MessageCircle, X, Send } from "lucide-react";
 import { answerPortfolioQuestion } from "../lib/portfolioKnowledge";
@@ -21,6 +21,13 @@ const WELCOME: ChatMessage = {
   text: `Hi! I can answer questions about ${INITIAL_PROFILE.name}'s portfolio only — skills, projects, experience, and contact details. What would you like to know?`,
 };
 
+const QUICK_PROMPTS = [
+  "What's your best AI project?",
+  "Tell me about your backend experience",
+  "Are you open to work?",
+  "How can I contact you?",
+];
+
 export default function PortfolioChat({
   accentTextClass = "text-sky-400",
   btnClass = "bg-sky-500/90 text-slate-950 hover:bg-sky-400",
@@ -37,26 +44,26 @@ export default function PortfolioChat({
     }
   }, [messages, typing, open]);
 
-  const sendMessage = async () => {
-    const text = input.trim();
-    if (!text || typing) return;
+  const submitText = useCallback(async (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || typing) return;
 
     const userMsg: ChatMessage = {
       id: `u-${Date.now()}`,
       role: "user",
-      text,
+      text: trimmed,
     };
 
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setTyping(true);
 
-    let reply = answerPortfolioQuestion(text);
+    let reply = answerPortfolioQuestion(trimmed);
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: trimmed }),
       });
 
       if (res.ok) {
@@ -72,7 +79,9 @@ export default function PortfolioChat({
       { id: `a-${Date.now()}`, role: "assistant", text: reply },
     ]);
     setTyping(false);
-  };
+  }, [typing]);
+
+  const sendMessage = () => submitText(input);
 
   return (
     <>
@@ -123,6 +132,20 @@ export default function PortfolioChat({
                   Typing…
                 </div>
               )}
+            </div>
+
+            <div className="px-3 pt-2 pb-1 border-t border-app-soft bg-app-card flex flex-wrap gap-1.5">
+              {QUICK_PROMPTS.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  disabled={typing}
+                  onClick={() => submitText(prompt)}
+                  className={`text-[9px] font-mono px-2 py-1 rounded-lg border border-app-soft text-app-muted hover:text-app-heading hover:border-app transition-colors disabled:opacity-40`}
+                >
+                  {prompt}
+                </button>
+              ))}
             </div>
 
             <form

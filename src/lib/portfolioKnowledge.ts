@@ -37,6 +37,9 @@ LinkedIn: ${INITIAL_PROFILE.linkedinUrl}
 CV download: ${INITIAL_PROFILE.cvUrl}
 Years of experience: ${INITIAL_PROFILE.yearsExperience}
 Projects completed: ${INITIAL_PROFILE.completedProjects}
+Case studies: ${INITIAL_PROFILE.caseStudies}
+Availability: ${INITIAL_PROFILE.availability}
+Right to work: ${INITIAL_PROFILE.rightToWork}
 
 Skills:
 ${skills}
@@ -86,6 +89,10 @@ export function answerPortfolioQuestion(raw: string): string {
 
   if (includesAny(q, ["phone", "call", "number", "mobile", "contact number"])) {
     return `His phone number is ${p.phone}.`;
+  }
+
+  if (includesAny(q, ["open to work", "available", "looking for", "hiring", "job hunt", "employed"])) {
+    return `${p.availability}. ${p.rightToWork}. Reach out at ${p.email} or use the contact form.`;
   }
 
   if (
